@@ -2,6 +2,7 @@ import type { CardCategory, TabooCard } from '../data/cards';
 
 export type TeamId = 'A' | 'B';
 export type Language = 'fa' | 'en';
+export type ThemeMode = 'dark' | 'light';
 export type GamePhase = 'LOBBY' | 'PRE_TURN' | 'PLAYING' | 'TURN_SUMMARY' | 'GAME_OVER';
 export type CardOutcome = 'CORRECT' | 'TABOO' | 'SKIPPED';
 
@@ -38,8 +39,10 @@ export interface GameSettings {
   targetScore: number; // e.g., 15, 25, 35, 50 points
   maxRounds: number; // e.g., 4, 6, 8, 12 rounds
   maxSkipsPerTurn: number; // e.g., 3, 5, 99 (unlimited)
+  maxHintsPerTurn: number; // e.g., 0, 1, 2, 3, 99 (unlimited)
   tabooPenalty: number; // 0 or 1 (subtract 1 point on taboo)
-  category: CardCategory;
+  categories: CardCategory[];
+  category?: CardCategory;
   deckLanguage: Language;
   voiceAndTextGuessing: boolean;
 }
@@ -60,6 +63,7 @@ export interface TurnState {
   timeRemaining: number;
   isPaused: boolean;
   skipsRemaining: number;
+  hintsRemaining: number;
   currentCard: TabooCard | null;
   // Masked info for guessing teammates so they can't cheat via network tab
   currentCardHint: {
@@ -67,6 +71,8 @@ export interface TurnState {
     wordCount: number;
     letterCount: number;
     firstLetter?: string;
+    hintText?: string;
+    hintType?: 'word' | 'letter';
     hintRevealed: boolean;
   } | null;
   playedCards: PlayedCardRecord[];

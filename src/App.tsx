@@ -13,6 +13,7 @@ import type {
   Language,
   RoomState,
   TeamId,
+  ThemeMode,
 } from './types/game';
 import { TopBar } from './components/TopBar';
 import { ScoreHeader } from './components/ScoreHeader';
@@ -38,6 +39,15 @@ interface CardEventBanner {
 
 export const App: React.FC = () => {
   const [lang, setLang] = useState<Language>('en');
+  const [theme, setTheme] = useState<ThemeMode>(() => {
+    try {
+      const saved = localStorage.getItem('hadeshood_theme');
+      if (saved === 'light' || saved === 'dark') return saved;
+    } catch {
+      // ignore storage errors
+    }
+    return 'dark';
+  });
   const [soundEnabled, setSoundEnabled] = useState<boolean>(true);
   const [profile, setProfile] = useState<DiscordUserProfile | null>(null);
   const [roomId, setRoomId] = useState<string>('NEON-1');
@@ -73,6 +83,17 @@ export const App: React.FC = () => {
     document.documentElement.dir = dir;
     document.documentElement.lang = lang;
   }, [lang]);
+
+  // Synchronize HTML dark/light class whenever theme changes
+  useEffect(() => {
+    document.documentElement.classList.toggle('light', theme === 'light');
+    document.documentElement.classList.toggle('dark', theme === 'dark');
+    try {
+      localStorage.setItem('hadeshood_theme', theme);
+    } catch {
+      // ignore storage errors
+    }
+  }, [theme]);
 
   // Load cards from public/cards.txt & public/cards_en.txt via src/data/cards.ts parser
   useEffect(() => {
@@ -226,6 +247,10 @@ export const App: React.FC = () => {
     });
   }, [socket]);
 
+  const handleToggleTheme = useCallback(() => {
+    setTheme((prev) => (prev === 'dark' ? 'light' : 'dark'));
+  }, []);
+
   const handleToggleSound = useCallback(() => {
     setSoundEnabled((prev) => {
       const next = !prev;
@@ -278,7 +303,7 @@ export const App: React.FC = () => {
   if (!profile || !roomState) {
     return (
       <div className="min-h-screen bg-persian-cyber flex flex-col items-center justify-center p-6 text-center relative">
-        <SplashCursorBackground />
+        <SplashCursorBackground theme={theme} />
         <div className="relative z-10 flex flex-col items-center">
           <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-cyan-500 to-rose-500 p-[2px] animate-spin mb-4">
             <div className="w-full h-full bg-slate-950 rounded-[14px]" />
@@ -318,13 +343,15 @@ export const App: React.FC = () => {
       }`}
     >
       {/* Interactive WebGL Smoky Fluid Simulation Background */}
-      <SplashCursorBackground />
+      <SplashCursorBackground theme={theme} />
 
       <div className="relative z-10 flex flex-col min-h-screen justify-between">
       {/* Top Navigation Bar */}
       <TopBar
         lang={lang}
         onToggleLang={handleToggleLang}
+        theme={theme}
+        onToggleTheme={handleToggleTheme}
         soundEnabled={soundEnabled}
         onToggleSound={handleToggleSound}
         profile={profile}

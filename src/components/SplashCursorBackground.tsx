@@ -1,4 +1,5 @@
 import React, { useEffect, useRef } from 'react';
+import type { ThemeMode } from '../types/game';
 
 export interface SplashCursorConfig {
   SIM_RESOLUTION?: number;
@@ -93,8 +94,30 @@ export const SMOKY_PRESET_CONFIG: SplashCursorConfig = {
   FLOW_BACKGROUND_FAINTNESS: 0.5,
 };
 
-export default function SplashCursorBackground() {
+export const LIGHT_SMOKY_PRESET_CONFIG: SplashCursorConfig = {
+  ...SMOKY_PRESET_CONFIG,
+  BACK_COLOR: {
+    r: 241,
+    g: 245,
+    b: 249,
+  },
+  BLOOM_INTENSITY: 0.45,
+  BLOOM_THRESHOLD: 0.65,
+  CUSTOM_COLOR: '#0284c7',
+  SECONDARY_COLOR: '#e11d48',
+  COLOR_PALETTE: ['#e11d48', '#4f46e5', '#0284c7'],
+};
+
+interface SplashCursorBackgroundProps {
+  theme?: ThemeMode;
+}
+
+export default function SplashCursorBackground({
+  theme = 'dark',
+}: SplashCursorBackgroundProps) {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
+  const themeRef = useRef<ThemeMode>(theme);
+  themeRef.current = theme;
 
   useEffect(() => {
     let cancelled = false;
@@ -106,7 +129,11 @@ export default function SplashCursorBackground() {
       .then(() => {
         engine = window.SplashCursorEngine;
         if (cancelled || !canvasRef.current || !engine) return;
-        initialized = engine.init(canvasRef.current, SMOKY_PRESET_CONFIG);
+        const initialCfg =
+          themeRef.current === 'light'
+            ? LIGHT_SMOKY_PRESET_CONFIG
+            : SMOKY_PRESET_CONFIG;
+        initialized = engine.init(canvasRef.current, initialCfg);
       })
       .catch((error) => {
         console.error('Unable to load SplashCursor:', error);
@@ -120,6 +147,14 @@ export default function SplashCursorBackground() {
     };
   }, []);
 
+  useEffect(() => {
+    const engine = window.SplashCursorEngine;
+    if (!engine) return;
+    engine.updateConfig(
+      theme === 'light' ? LIGHT_SMOKY_PRESET_CONFIG : SMOKY_PRESET_CONFIG
+    );
+  }, [theme]);
+
   return (
     <canvas
       ref={canvasRef}
@@ -131,6 +166,8 @@ export default function SplashCursorBackground() {
         height: '100vh',
         zIndex: 0,
         pointerEvents: 'none',
+        opacity: theme === 'light' ? 0.68 : 1,
+        transition: 'opacity 0.35s ease',
       }}
       aria-hidden="true"
     />

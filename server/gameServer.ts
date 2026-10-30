@@ -154,6 +154,7 @@ export function setupGameServer(httpServer: HttpServer, app: Express) {
       timeRemaining: 60,
       isPaused: false,
       skipsRemaining: 3,
+      hintsRemaining: 2,
       currentCard: null,
       currentCardHint: null,
       playedCards: [],
@@ -177,7 +178,9 @@ export function setupGameServer(httpServer: HttpServer, app: Express) {
           targetScore: 20,
           maxRounds: 6,
           maxSkipsPerTurn: 3,
+          maxHintsPerTurn: 2,
           tabooPenalty: 1,
+          categories: ['all'],
           category: 'all',
           deckLanguage: 'en',
           voiceAndTextGuessing: true,
@@ -199,14 +202,18 @@ export function setupGameServer(httpServer: HttpServer, app: Express) {
   function getFilteredPool(room: ServerRoom): TabooCard[] {
     const langDeck = baseDecks[room.settings.deckLanguage] || baseDecks.fa;
     const combined = [...room.customCards, ...langDeck];
-    if (room.settings.category === 'all') {
+    const selectedCats =
+      room.settings.categories && room.settings.categories.length > 0
+        ? room.settings.categories
+        : room.settings.category
+        ? [room.settings.category]
+        : ['all'];
+
+    if (selectedCats.includes('all')) {
       return combined;
     }
-    if (room.settings.category === 'custom') {
-      return room.customCards.length > 0 ? room.customCards : combined;
-    }
     const filtered = combined.filter(
-      (c) => c.category === room.settings.category || c.category === 'custom'
+      (c) => selectedCats.includes(c.category) || c.category === 'custom'
     );
     return filtered.length > 0 ? filtered : combined;
   }
@@ -241,12 +248,17 @@ export function setupGameServer(httpServer: HttpServer, app: Express) {
       const cleanWord = card.word.trim();
       const words = cleanWord.split(/\s+/).filter(Boolean);
       const letters = cleanWord.replace(/\s+/g, '').length;
+      const isMultiWordHint = words.length >= 3;
+      const hintType: 'word' | 'letter' = isMultiWordHint ? 'word' : 'letter';
+      const hintText = isMultiWordHint ? words[0] : cleanWord[0] || '';
       room.turn.currentCard = card;
       room.turn.currentCardHint = {
         category: card.category,
         wordCount: words.length,
         letterCount: letters,
-        firstLetter: cleanWord[0] || '',
+        firstLetter: hintText,
+        hintText,
+        hintType,
         hintRevealed: false,
       };
       room.turn.buzzerCooldownUntil = Date.now() + 1200;
@@ -336,6 +348,7 @@ export function setupGameServer(httpServer: HttpServer, app: Express) {
       timeRemaining: room.settings.turnDuration,
       isPaused: false,
       skipsRemaining: room.settings.maxSkipsPerTurn,
+      hintsRemaining: room.settings.maxHintsPerTurn ?? 2,
       currentCard: null,
       currentCardHint: null,
       playedCards: [],
@@ -605,6 +618,11 @@ export function setupGameServer(httpServer: HttpServer, app: Express) {
         ...room.settings,
         ...partial,
       };
+      if (partial.categories && partial.categories.length > 0) {
+        room.settings.category = partial.categories[0];
+      } else if (partial.category && !partial.categories) {
+        room.settings.categories = [partial.category];
+      }
       if (partial.deckLanguage) {
         room.players.forEach((p, idx) => {
           if (
@@ -706,6 +724,8 @@ export function setupGameServer(httpServer: HttpServer, app: Express) {
       if (!info) return;
       const room = rooms.get(info.roomId);
       if (!room || room.phase !== 'PLAYING' || !room.turn.currentCardHint) return;
+      if (room.turn.currentCardHint.hintRevealed || room.turn.hintsRemaining <= 0) return;
+      room.turn.hintsRemaining -= 1;
       room.turn.currentCardHint.hintRevealed = true;
       broadcastRoomState(room);
     });

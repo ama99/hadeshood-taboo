@@ -18,12 +18,41 @@
     color: #f8fafc;
     min-height: 100vh;
     overflow-x: hidden;
+    transition: background-color 0.35s ease, color 0.35s ease;
+  }
+
+  html.light body {
+    background-color: #f1f5f9;
+    color: #0f172a;
   }
 }
 
 /* Transparent overlay container so the WebGL SplashCursor smoky simulation shines through */
 .bg-persian-cyber {
   background-color: transparent;
+}
+
+/* Heartbeat pulse animation for urgent timer */
+@keyframes heartbeatPulse {
+  0%, 100% {
+    transform: scale(1);
+  }
+  15% {
+    transform: scale(1.16);
+  }
+  30% {
+    transform: scale(1);
+  }
+  45% {
+    transform: scale(1.11);
+  }
+  65% {
+    transform: scale(1);
+  }
+}
+
+.animate-heartbeat {
+  animation: heartbeatPulse 0.85s ease-in-out infinite;
 }
 
 /* Card entrance & flip animation */
@@ -97,3 +126,105 @@
 ::-webkit-scrollbar-thumb:hover {
   background: rgba(148, 163, 184, 0.45);
 }
+
+/* Light Mode Adaptive Overrides for Glassmorphic Surfaces & Typography */
+html.light .bg-slate-950\/75,
+html.light .bg-slate-950\/80,
+html.light .bg-slate-950\/85,
+html.light .bg-slate-950\/90,
+html.light .bg-slate-950\/95,
+html.light .bg-slate-950 {
+  background-color: rgba(255, 255, 255, 0.88) !important;
+}
+
+html.light .bg-slate-950\/50,
+html.light .bg-slate-950\/60,
+html.light .bg-slate-950\/70 {
+  background-color: rgba(241, 245, 249, 0.85) !important;
+}
+
+html.light .bg-slate-900\/75,
+html.light .bg-slate-900\/80,
+html.light .bg-slate-900\/85,
+html.light .bg-slate-900\/90,
+html.light .bg-slate-900\/95,
+html.light .bg-slate-900 {
+  background-color: rgba(255, 255, 255, 0.82) !important;
+  box-shadow: 0 10px 30px -10px rgba(15, 23, 42, 0.08);
+}
+
+html.light .bg-slate-800,
+html.light .bg-slate-800\/80 {
+  background-color: rgba(226, 232, 240, 0.9) !important;
+}
+
+html.light .from-slate-900\/95 {
+  --tw-gradient-from: rgba(255, 255, 255, 0.95) !important;
+}
+html.light .via-indigo-950\/80 {
+  --tw-gradient-via: rgba(224, 231, 255, 0.85) !important;
+}
+html.light .to-slate-950 {
+  --tw-gradient-to: rgba(248, 250, 252, 0.95) !important;
+}
+html.light .from-cyan-950\/90 {
+  --tw-gradient-from: rgba(207, 250, 254, 0.95) !important;
+}
+html.light .from-rose-950\/90 {
+  --tw-gradient-from: rgba(255, 228, 230, 0.95) !important;
+}
+html.light .via-slate-900 {
+  --tw-gradient-via: rgba(248, 250, 252, 0.92) !important;
+}
+html.light .to-indigo-950\/90 {
+  --tw-gradient-to: rgba(224, 231, 255, 0.92) !important;
+}
+
+html.light .text-white {
+  color: #0f172a !important;
+}
+
+html.light .text-slate-100,
+html.light .text-slate-200 {
+  color: #1e293b !important;
+}
+
+html.light .text-slate-300 {
+  color: #334155 !important;
+}
+
+html.light .text-slate-400 {
+  color: #475569 !important;
+}
+
+html.light .text-cyan-200,
+html.light .text-cyan-300 {
+  color: #0369a1 !important;
+}
+
+html.light .text-rose-200,
+html.light .text-rose-300 {
+  color: #be123c !important;
+}
+
+html.light .text-amber-200,
+html.light .text-amber-300 {
+  color: #b45309 !important;
+}
+
+html.light .text-emerald-200,
+html.light .text-emerald-300 {
+  color: #047857 !important;
+}
+
+html.light .text-indigo-200,
+html.light .text-indigo-300 {
+  color: #4338ca !important;
+}
+
+html.light .border-white\/5,
+html.light .border-white\/10,
+html.light .border-white\/15 {
+  border-color: rgba(15, 23, 42, 0.12) !important;
+}
+

@@ -70,44 +70,49 @@ export const TabooCardView: React.FC<TabooCardViewProps> = ({
             {t.mysteryCardSubtitle}
           </p>
 
-          {/* Word & Letter Count Clues */}
-          {hint && (
-            <div className="grid grid-cols-2 gap-3 mb-5">
-              <div className="bg-slate-950/80 border border-white/10 rounded-2xl p-3">
-                <div className="text-[11px] text-slate-400">{t.wordCountHint}</div>
-                <div className="text-xl font-black text-cyan-300 mt-0.5">
-                  {formatNumber(hint.wordCount, lang)}
-                </div>
-              </div>
-              <div className="bg-slate-950/80 border border-white/10 rounded-2xl p-3">
-                <div className="text-[11px] text-slate-400">{t.letterCountHint}</div>
-                <div className="text-xl font-black text-indigo-300 mt-0.5">
-                  {formatNumber(hint.letterCount, lang)}
-                </div>
-              </div>
-            </div>
-          )}
-
-          {/* Optional First Letter Hint */}
+          {/* Hint Button & Remaining Hints Counter (First Word for 3+ word cards, First Letter otherwise) */}
           {hint && (
             <div>
               {hint.hintRevealed ? (
-                <div className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-amber-500/15 border border-amber-500/30 text-amber-300 text-sm font-bold">
-                  <HelpCircle className="w-4 h-4" />
+                <div className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-amber-500/15 border border-amber-500/30 text-amber-300 text-sm font-bold">
+                  <HelpCircle className="w-4 h-4 shrink-0" />
                   <span>
-                    {t.firstLetterHint} « {hint.firstLetter} »
+                    {(hint.hintType === 'word' || hint.wordCount >= 3)
+                      ? t.firstWordHint
+                      : t.firstLetterHint}{' '}
+                    « {hint.hintText || hint.firstLetter} »
                   </span>
                 </div>
               ) : (
                 <button
                   onClick={() => {
+                    if ((turn.hintsRemaining ?? 0) <= 0) return;
                     soundFX.playClick();
                     onRevealHint();
                   }}
-                  className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-white/5 hover:bg-white/10 border border-white/15 text-slate-300 hover:text-white text-xs font-bold transition cursor-pointer"
+                  disabled={(turn.hintsRemaining ?? 0) <= 0}
+                  className={`inline-flex flex-col items-center gap-1 px-5 py-2.5 rounded-2xl border text-xs font-bold transition ${
+                    (turn.hintsRemaining ?? 0) > 0
+                      ? 'bg-amber-500/15 hover:bg-amber-500/25 border-amber-400/40 text-amber-300 cursor-pointer active:scale-95'
+                      : 'bg-slate-900/50 border-white/5 text-slate-500 cursor-not-allowed opacity-70'
+                  }`}
                 >
-                  <HelpCircle className="w-4 h-4 text-amber-400" />
-                  <span>{t.revealHintBtn}</span>
+                  <div className="flex items-center gap-1.5">
+                    <HelpCircle className="w-4 h-4 text-amber-400" />
+                    <span>
+                      {(turn.hintsRemaining ?? 0) <= 0
+                        ? t.noHintsLeft
+                        : hint.hintType === 'word' || hint.wordCount >= 3
+                        ? t.revealWordHintBtn
+                        : t.revealHintBtn}
+                    </span>
+                  </div>
+                  <span className="text-[10px] opacity-80">
+                    {t.hintsLeft}:{' '}
+                    {(turn.hintsRemaining ?? 0) > 50
+                      ? '∞'
+                      : formatNumber(turn.hintsRemaining ?? 0, lang)}
+                  </span>
                 </button>
               )}
             </div>

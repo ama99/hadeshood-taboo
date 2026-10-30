@@ -6,6 +6,7 @@
   "type": "module",
   "scripts": {
     "dev": "vite --host",
+    "tunnel": "tsx server/startTunnel.ts",
     "build": "tsc -b && vite build",
     "start": "tsx server/index.ts",
     "server": "tsx watch server/index.ts",

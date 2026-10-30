@@ -14,6 +14,11 @@ import {
   AlertTriangle,
   Layers,
   PlusCircle,
+  HelpCircle,
+  Hash,
+  Check,
+  Minus,
+  Plus,
 } from 'lucide-react';
 import { translations, formatNumber } from '../i18n/translations';
 import type { CardCategory } from '../data/cards';
@@ -64,6 +69,26 @@ export const LobbyView: React.FC<LobbyViewProps> = ({
     'places',
     'general',
   ];
+
+  const selectedCategories: CardCategory[] =
+    settings.categories && settings.categories.length > 0
+      ? settings.categories
+      : [settings.category || 'all'];
+
+  const handleToggleCategory = (cat: CardCategory) => {
+    soundFX.playClick();
+    if (cat === 'all') {
+      onUpdateSettings({ categories: ['all'], category: 'all' });
+      return;
+    }
+    const withoutAll = selectedCategories.filter((c) => c !== 'all');
+    const exists = withoutAll.includes(cat);
+    const next = exists
+      ? withoutAll.filter((c) => c !== cat)
+      : [...withoutAll, cat];
+    const finalCats: CardCategory[] = next.length > 0 ? next : ['all'];
+    onUpdateSettings({ categories: finalCats, category: finalCats[0] });
+  };
 
   return (
     <div className="max-w-7xl mx-auto px-3 sm:px-6 py-4 sm:py-6 space-y-6">
@@ -354,28 +379,31 @@ export const LobbyView: React.FC<LobbyViewProps> = ({
             </div>
           </div>
 
-          {/* Category Filter */}
+          {/* Category Filter (Multi-Select) */}
           <div>
             <label className="block text-xs font-bold text-slate-300 mb-2">
               {t.cardCategory}
             </label>
             <div className="grid grid-cols-2 gap-1.5 max-h-44 overflow-y-auto pe-1">
-              {categories.map((cat) => (
-                <button
-                  key={cat}
-                  onClick={() => {
-                    soundFX.playClick();
-                    onUpdateSettings({ category: cat });
-                  }}
-                  className={`py-2 px-2.5 rounded-xl text-xs font-bold text-start truncate border transition cursor-pointer ${
-                    settings.category === cat
-                      ? 'bg-indigo-500/25 border-indigo-400 text-white shadow-sm'
-                      : 'bg-slate-950/60 border-white/5 text-slate-400 hover:text-slate-200'
-                  }`}
-                >
-                  {t.categories[cat]}
-                </button>
-              ))}
+              {categories.map((cat) => {
+                const isSelected = selectedCategories.includes(cat);
+                return (
+                  <button
+                    key={cat}
+                    onClick={() => handleToggleCategory(cat)}
+                    className={`py-2 px-2.5 rounded-xl text-xs font-bold text-start flex items-center justify-between gap-1.5 border transition cursor-pointer ${
+                      isSelected
+                        ? 'bg-indigo-500/25 border-indigo-400 text-white shadow-sm'
+                        : 'bg-slate-950/60 border-white/5 text-slate-400 hover:text-slate-200'
+                    }`}
+                  >
+                    <span className="truncate">{t.categories[cat]}</span>
+                    {isSelected && (
+                      <Check className="w-3.5 h-3.5 text-indigo-300 shrink-0" />
+                    )}
+                  </button>
+                );
+              })}
             </div>
           </div>
 
@@ -432,15 +460,70 @@ export const LobbyView: React.FC<LobbyViewProps> = ({
             </div>
           </div>
 
-          {/* Max Skips & Taboo Penalty */}
+          {/* Total Rounds (Editable Preset + Stepper) */}
+          <div>
+            <label className="flex items-center justify-between text-xs font-bold text-slate-300 mb-1.5">
+              <span className="flex items-center gap-1">
+                <Hash className="w-3.5 h-3.5 text-indigo-400" />
+                <span>{t.maxRounds}</span>
+              </span>
+              <span className="text-indigo-300 font-black">
+                {formatNumber(settings.maxRounds, lang)}
+              </span>
+            </label>
+            <div className="flex items-center gap-1.5">
+              <button
+                onClick={() => {
+                  soundFX.playClick();
+                  onUpdateSettings({
+                    maxRounds: Math.max(1, (settings.maxRounds || 6) - 1),
+                  });
+                }}
+                className="p-2 rounded-xl bg-slate-950/60 hover:bg-slate-800 border border-white/10 text-slate-300 cursor-pointer transition"
+              >
+                <Minus className="w-3.5 h-3.5" />
+              </button>
+              <div className="flex-1 grid grid-cols-4 gap-1.5">
+                {[4, 6, 8, 10].map((rnd) => (
+                  <button
+                    key={rnd}
+                    onClick={() => {
+                      soundFX.playClick();
+                      onUpdateSettings({ maxRounds: rnd });
+                    }}
+                    className={`py-1.5 rounded-xl text-xs font-bold border transition cursor-pointer ${
+                      settings.maxRounds === rnd
+                        ? 'bg-indigo-500/25 border-indigo-400 text-indigo-200'
+                        : 'bg-slate-950/60 border-white/10 text-slate-400'
+                    }`}
+                  >
+                    {formatNumber(rnd, lang)}
+                  </button>
+                ))}
+              </div>
+              <button
+                onClick={() => {
+                  soundFX.playClick();
+                  onUpdateSettings({
+                    maxRounds: Math.min(30, (settings.maxRounds || 6) + 1),
+                  });
+                }}
+                className="p-2 rounded-xl bg-slate-950/60 hover:bg-slate-800 border border-white/10 text-slate-300 cursor-pointer transition"
+              >
+                <Plus className="w-3.5 h-3.5" />
+              </button>
+            </div>
+          </div>
+
+          {/* Max Skips & Max Hints Per Turn */}
           <div className="grid grid-cols-2 gap-3">
             <div>
               <label className="flex items-center gap-1 text-xs font-bold text-slate-300 mb-1.5">
                 <FastForward className="w-3.5 h-3.5 text-cyan-400" />
                 <span>{t.maxSkips}</span>
               </label>
-              <div className="grid grid-cols-3 gap-1.5">
-                {[2, 3, 99].map((sk) => (
+              <div className="grid grid-cols-4 gap-1">
+                {[0, 2, 3, 99].map((sk) => (
                   <button
                     key={sk}
                     onClick={() => {
@@ -461,27 +544,53 @@ export const LobbyView: React.FC<LobbyViewProps> = ({
 
             <div>
               <label className="flex items-center gap-1 text-xs font-bold text-slate-300 mb-1.5">
-                <AlertTriangle className="w-3.5 h-3.5 text-rose-400" />
-                <span>{t.tabooPenalty}</span>
+                <HelpCircle className="w-3.5 h-3.5 text-amber-400" />
+                <span>{t.maxHints}</span>
               </label>
-              <div className="grid grid-cols-2 gap-1.5">
-                {[1, 0].map((pen) => (
+              <div className="grid grid-cols-5 gap-1">
+                {[0, 1, 2, 3, 99].map((hn) => (
                   <button
-                    key={pen}
+                    key={hn}
                     onClick={() => {
                       soundFX.playClick();
-                      onUpdateSettings({ tabooPenalty: pen });
+                      onUpdateSettings({ maxHintsPerTurn: hn });
                     }}
-                    className={`py-1.5 px-2 rounded-xl text-[11px] font-bold border transition cursor-pointer truncate ${
-                      settings.tabooPenalty === pen
-                        ? 'bg-rose-500/25 border-rose-400 text-rose-200'
+                    className={`py-1.5 rounded-xl text-xs font-bold border transition cursor-pointer ${
+                      (settings.maxHintsPerTurn ?? 2) === hn
+                        ? 'bg-amber-500/25 border-amber-400 text-amber-200'
                         : 'bg-slate-950/60 border-white/10 text-slate-400'
                     }`}
                   >
-                    {pen === 1 ? '-۱' : '۰'}
+                    {hn > 50 ? '∞' : formatNumber(hn, lang)}
                   </button>
                 ))}
               </div>
+            </div>
+          </div>
+
+          {/* Taboo Penalty */}
+          <div>
+            <label className="flex items-center gap-1 text-xs font-bold text-slate-300 mb-1.5">
+              <AlertTriangle className="w-3.5 h-3.5 text-rose-400" />
+              <span>{t.tabooPenalty}</span>
+            </label>
+            <div className="grid grid-cols-2 gap-2">
+              {[1, 0].map((pen) => (
+                <button
+                  key={pen}
+                  onClick={() => {
+                    soundFX.playClick();
+                    onUpdateSettings({ tabooPenalty: pen });
+                  }}
+                  className={`py-1.5 px-2 rounded-xl text-[11px] font-bold border transition cursor-pointer truncate ${
+                    settings.tabooPenalty === pen
+                      ? 'bg-rose-500/25 border-rose-400 text-rose-200'
+                      : 'bg-slate-950/60 border-white/10 text-slate-400'
+                  }`}
+                >
+                  {pen === 1 ? t.penaltyMinusOne : t.penaltyZero}
+                </button>
+              ))}
             </div>
           </div>
         </div>

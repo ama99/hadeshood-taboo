@@ -100,13 +100,13 @@ export const ScoreHeader: React.FC<ScoreHeaderProps> = ({
               <div
                 className={`relative flex items-center justify-center px-4 py-1.5 rounded-2xl border font-mono text-2xl sm:text-3xl font-black transition-all ${
                   isUrgent
-                    ? 'bg-rose-500/20 border-rose-500 text-rose-300 animate-bounce shadow-lg shadow-rose-500/30'
+                    ? 'bg-rose-500/20 border-rose-500 text-rose-300 animate-heartbeat shadow-lg shadow-rose-500/30'
                     : 'bg-slate-950/90 border-white/15 text-white'
                 }`}
               >
                 <Timer
                   className={`w-5 h-5 me-1.5 ${
-                    isUrgent ? 'text-rose-400 animate-spin' : 'text-cyan-400'
+                    isUrgent ? 'text-rose-400 animate-pulse' : 'text-cyan-400'
                   }`}
                 />
                 <span>{formatNumber(turn.timeRemaining, lang)}</span>

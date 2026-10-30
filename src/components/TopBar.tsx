@@ -10,14 +10,18 @@ import {
   Hash,
   Edit3,
   PlusCircle,
+  Sun,
+  Moon,
 } from 'lucide-react';
 import { translations, formatNumber } from '../i18n/translations';
-import type { DiscordUserProfile, Language } from '../types/game';
+import type { DiscordUserProfile, Language, ThemeMode } from '../types/game';
 import { soundFX } from '../utils/sound';
 
 interface TopBarProps {
   lang: Language;
   onToggleLang: () => void;
+  theme: ThemeMode;
+  onToggleTheme: () => void;
   soundEnabled: boolean;
   onToggleSound: () => void;
   profile: DiscordUserProfile;
@@ -33,6 +37,8 @@ interface TopBarProps {
 export const TopBar: React.FC<TopBarProps> = ({
   lang,
   onToggleLang,
+  theme,
+  onToggleTheme,
   soundEnabled,
   onToggleSound,
   profile,
@@ -188,6 +194,22 @@ export const TopBar: React.FC<TopBarProps> = ({
             className="p-2 rounded-xl bg-slate-900 hover:bg-slate-800 border border-white/10 text-slate-300 hover:text-white transition cursor-pointer"
           >
             <HelpCircle className="w-4 h-4 text-amber-400" />
+          </button>
+
+          {/* Theme Toggle (Dark <-> Light) */}
+          <button
+            onClick={() => {
+              soundFX.playClick();
+              onToggleTheme();
+            }}
+            title={theme === 'dark' ? t.lightMode : t.darkMode}
+            className="p-2 rounded-xl bg-slate-900 hover:bg-slate-800 border border-white/10 text-slate-300 hover:text-white transition cursor-pointer"
+          >
+            {theme === 'dark' ? (
+              <Sun className="w-4 h-4 text-amber-400" />
+            ) : (
+              <Moon className="w-4 h-4 text-indigo-500" />
+            )}
           </button>
 
           {/* Sound Toggle */}
