@@ -71,7 +71,7 @@ export const SMOKY_PRESET_CONFIG: SplashCursorConfig = {
     g: 5,
     b: 12,
   },
-  TRANSPARENT: true,
+  TRANSPARENT: false,
   BLOOM: true,
   BLOOM_ITERATIONS: 8,
   BLOOM_RESOLUTION: 256,
@@ -97,15 +97,16 @@ export const SMOKY_PRESET_CONFIG: SplashCursorConfig = {
 export const LIGHT_SMOKY_PRESET_CONFIG: SplashCursorConfig = {
   ...SMOKY_PRESET_CONFIG,
   BACK_COLOR: {
-    r: 241,
-    g: 245,
-    b: 249,
+    r: 245,
+    g: 247,
+    b: 252,
   },
-  BLOOM_INTENSITY: 0.45,
-  BLOOM_THRESHOLD: 0.65,
-  CUSTOM_COLOR: '#0284c7',
-  SECONDARY_COLOR: '#e11d48',
-  COLOR_PALETTE: ['#e11d48', '#4f46e5', '#0284c7'],
+  TRANSPARENT: false,
+  BLOOM: false,
+  DENSITY_COLOR_SENSITIVITY: 11,
+  CUSTOM_COLOR: '#00d4ff',
+  SECONDARY_COLOR: '#ff0038',
+  COLOR_PALETTE: ['#00d4ff', '#00b4d8', '#ff0038', '#c9002b'],
 };
 
 interface SplashCursorBackgroundProps {
@@ -153,6 +154,7 @@ export default function SplashCursorBackground({
     engine.updateConfig(
       theme === 'light' ? LIGHT_SMOKY_PRESET_CONFIG : SMOKY_PRESET_CONFIG
     );
+    engine.triggerSplats(4);
   }, [theme]);
 
   return (
@@ -166,8 +168,6 @@ export default function SplashCursorBackground({
         height: '100vh',
         zIndex: 0,
         pointerEvents: 'none',
-        opacity: theme === 'light' ? 0.68 : 1,
-        transition: 'opacity 0.35s ease',
       }}
       aria-hidden="true"
     />

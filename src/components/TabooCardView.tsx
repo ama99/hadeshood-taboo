@@ -183,7 +183,6 @@ export const TabooCardView: React.FC<TabooCardViewProps> = ({
                 <button
                   key={idx}
                   onClick={() => {
-                    soundFX.playTabooBuzzer();
                     onBuzzTaboo(fw);
                   }}
                   className="group relative flex items-center justify-between gap-2 px-3.5 py-3 rounded-2xl bg-slate-950/85 hover:bg-rose-500/25 border border-rose-500/25 hover:border-rose-400 text-slate-100 hover:text-white font-bold text-sm sm:text-base transition-all cursor-pointer shadow-sm active:scale-95"
@@ -218,7 +217,6 @@ export const TabooCardView: React.FC<TabooCardViewProps> = ({
             {/* Correct (+1) Button */}
             <button
               onClick={() => {
-                soundFX.playCorrect();
                 onCorrect();
               }}
               className="col-span-3 flex items-center justify-center gap-2 py-3.5 px-4 rounded-2xl bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-400 hover:to-teal-400 text-slate-950 font-black text-base sm:text-lg shadow-lg shadow-emerald-500/25 transition transform active:scale-95 cursor-pointer"
@@ -231,7 +229,6 @@ export const TabooCardView: React.FC<TabooCardViewProps> = ({
             <button
               onClick={() => {
                 if (turn.skipsRemaining <= 0) return;
-                soundFX.playSkip();
                 onSkip();
               }}
               disabled={turn.skipsRemaining <= 0}
@@ -257,7 +254,6 @@ export const TabooCardView: React.FC<TabooCardViewProps> = ({
           {/* Self-Taboo Report Button */}
           <button
             onClick={() => {
-              soundFX.playTabooBuzzer();
               onBuzzTaboo();
             }}
             className="w-full py-2 px-4 rounded-xl bg-rose-500/10 hover:bg-rose-500/20 border border-rose-500/25 text-rose-300 text-xs font-bold flex items-center justify-center gap-1.5 transition cursor-pointer"
@@ -271,12 +267,11 @@ export const TabooCardView: React.FC<TabooCardViewProps> = ({
         <div className="mt-4">
           <button
             onClick={() => {
-              soundFX.playTabooBuzzer();
               onBuzzTaboo();
             }}
             className="w-full py-4 px-6 rounded-2xl bg-gradient-to-r from-rose-600 via-red-500 to-rose-600 hover:from-rose-500 hover:to-red-400 text-white font-black text-lg sm:text-xl shadow-xl shadow-rose-600/35 border border-rose-300/40 flex items-center justify-center gap-3 transition transform active:scale-95 cursor-pointer"
           >
-            <AlertOctagon className="w-6 h-6 animate-bounce" />
+            <AlertOctagon className="w-6 h-6" />
             <span>{t.tabooBuzzerBtn}</span>
           </button>
         </div>

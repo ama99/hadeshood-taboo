@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useCallback } from 'react';
+import React, { useEffect, useState, useCallback, useRef } from 'react';
 import { io, type Socket } from 'socket.io-client';
 import { Eye, Mic, ShieldAlert, Sparkles } from 'lucide-react';
 import { initializeDiscordSdk, saveLocalProfile } from './services/discord';
@@ -74,6 +74,38 @@ export const App: React.FC = () => {
   const [shakeScreen, setShakeScreen] = useState(false);
   const [clueWarning, setClueWarning] = useState<string | null>(null);
   const [floatingReactions, setFloatingReactions] = useState<FloatingReaction[]>([]);
+  const lastOutcomeFXRef = useRef<{ outcome: CardOutcome; time: number }>({
+    outcome: 'CORRECT',
+    time: 0,
+  });
+  const shakeTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const triggerCardOutcomeFX = useCallback((outcome: CardOutcome) => {
+    const now = Date.now();
+    if (
+      lastOutcomeFXRef.current.outcome === outcome &&
+      now - lastOutcomeFXRef.current.time < 550
+    ) {
+      return;
+    }
+    lastOutcomeFXRef.current = { outcome, time: now };
+
+    if (outcome === 'CORRECT') {
+      soundFX.playCorrect();
+      window.SplashCursorEngine?.triggerSplats(5);
+    } else if (outcome === 'TABOO') {
+      soundFX.playTabooBuzzer();
+      window.SplashCursorEngine?.triggerSplats(6);
+      if (shakeTimerRef.current) clearTimeout(shakeTimerRef.current);
+      setShakeScreen(false);
+      requestAnimationFrame(() => {
+        setShakeScreen(true);
+        shakeTimerRef.current = setTimeout(() => setShakeScreen(false), 410);
+      });
+    } else if (outcome === 'SKIPPED') {
+      soundFX.playSkip();
+    }
+  }, []);
 
   const t = translations[lang];
 
@@ -163,9 +195,6 @@ export const App: React.FC = () => {
             },
           };
         });
-        if (timeRemaining <= 10 && timeRemaining > 0) {
-          soundFX.playTick(true);
-        }
       });
 
       s.on(
@@ -176,17 +205,7 @@ export const App: React.FC = () => {
           byPlayerName?: string;
           violatedWord?: string;
         }) => {
-          if (evt.outcome === 'CORRECT') {
-            soundFX.playCorrect();
-            window.SplashCursorEngine?.triggerSplats(5);
-          } else if (evt.outcome === 'TABOO') {
-            soundFX.playTabooBuzzer();
-            window.SplashCursorEngine?.triggerSplats(6);
-            setShakeScreen(true);
-            setTimeout(() => setShakeScreen(false), 450);
-          } else if (evt.outcome === 'SKIPPED') {
-            soundFX.playSkip();
-          }
+          triggerCardOutcomeFX(evt.outcome);
 
           setEventBanner({
             id: `${Date.now()}`,
@@ -225,7 +244,19 @@ export const App: React.FC = () => {
         activeSocket.disconnect();
       }
     };
-  }, []);
+  }, [triggerCardOutcomeFX]);
+
+  // Synchronize urgent timer heartbeat sound with the exact render frame of timeRemaining
+  useEffect(() => {
+    if (
+      roomState?.phase === 'PLAYING' &&
+      !roomState.turn.isPaused &&
+      roomState.turn.timeRemaining <= 10 &&
+      roomState.turn.timeRemaining > 0
+    ) {
+      soundFX.playTick(true);
+    }
+  }, [roomState?.phase, roomState?.turn.isPaused, roomState?.turn.timeRemaining]);
 
   // Clear card event banner after 2.4 seconds
   useEffect(() => {
@@ -510,11 +541,20 @@ export const App: React.FC = () => {
                       roleView={effectiveRole}
                       lang={lang}
                       describerName={describerPlayer?.displayName || 'Describer'}
-                      onCorrect={() => socket?.emit('card_correct')}
-                      onSkip={() => socket?.emit('card_skip')}
-                      onBuzzTaboo={(violatedWord?: string) =>
-                        socket?.emit('buzz_taboo', { violatedWord })
-                      }
+                      onCorrect={() => {
+                        triggerCardOutcomeFX('CORRECT');
+                        socket?.emit('card_correct');
+                      }}
+                      onSkip={() => {
+                        if (roomState.turn.skipsRemaining <= 0) return;
+                        triggerCardOutcomeFX('SKIPPED');
+                        socket?.emit('card_skip');
+                      }}
+                      onBuzzTaboo={(violatedWord?: string) => {
+                        if (Date.now() < roomState.turn.buzzerCooldownUntil) return;
+                        triggerCardOutcomeFX('TABOO');
+                        socket?.emit('buzz_taboo', { violatedWord });
+                      }}
                       onRevealHint={() => socket?.emit('reveal_hint')}
                     />
                   </div>

@@ -423,6 +423,36 @@ window.SplashCursorEngine = (function () {
 
     void main () {
       vec3 c = texture2D(uTexture, vUv).rgb;
+      float bgLuma = dot(uBackColor, vec3(0.299, 0.587, 0.114));
+
+      if (uColorMode > 0.5 && bgLuma > 0.5) {
+        float density = max(c.r, max(c.g, c.b));
+        float palettePosition = 1.0 - exp(-density * max(uDensitySensitivity, 0.0001));
+        float intensity = clamp(1.0 - exp(-density * 3.2), 0.0, 1.0);
+        vec3 mappedColor = texture2D(
+          uPaletteTexture,
+          vec2(clamp(palettePosition, 0.0, 1.0), 0.5)
+        ).rgb;
+
+        if (uShading > 0.5) {
+          vec3 lc = texture2D(uTexture, vL).rgb;
+          vec3 rc = texture2D(uTexture, vR).rgb;
+          vec3 tc = texture2D(uTexture, vT).rgb;
+          vec3 bc = texture2D(uTexture, vB).rgb;
+
+          float dx = length(rc) - length(lc);
+          float dy = length(tc) - length(bc);
+
+          vec3 n = normalize(vec3(dx, dy, length(texelSize)));
+          vec3 l = vec3(0.0, 0.0, 1.0);
+          float diffuse = clamp(dot(n, l) + 0.75, 0.75, 1.0);
+          mappedColor *= diffuse;
+        }
+
+        vec3 finalLightColor = mix(uBackColor, mappedColor, intensity);
+        gl_FragColor = vec4(finalLightColor, 1.0);
+        return;
+      }
 
       if (uColorMode > 0.5) {
         c = mapDensityToPalette(c);
