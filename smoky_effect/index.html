@@ -1,0 +1,435 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SplashCursor Background Studio | ReactBits Interactive WebGL Fluid Generator</title>
+  <meta name="description" content="Design, customize, save presets and export reusable WebGL SplashCursor fluid animation backgrounds for any web page.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&family=Fira+Code:wght@400;500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css?v=20260814-5">
+</head>
+<body>
+
+  <!-- Fullscreen WebGL Fluid Canvas -->
+  <canvas id="fluid-canvas" aria-hidden="true"></canvas>
+
+  <!-- Top Action Navigation Bar -->
+  <header class="top-nav">
+    <div class="brand">
+      <div class="brand-logo">💧</div>
+      <div class="brand-text">SplashCursor Studio</div>
+      <span class="brand-badge">PRO ENGINE</span>
+    </div>
+
+    <div class="header-actions">
+      <button class="btn" id="toggle-sandbox-btn" title="Toggle interactive website overlay preview">
+        👁️ Sandbox View
+      </button>
+      <button class="btn" id="trigger-splat-btn" title="Trigger fluid splash explosion">
+        💥 Splat
+      </button>
+      <button class="btn" id="randomize-btn" title="Randomize fluid parameters">
+        🎲 Randomize
+      </button>
+      <button class="btn" id="save-preset-btn" title="Save current settings to your preset library">
+        ⭐ Save Preset
+      </button>
+      <button class="btn btn-primary" id="export-code-btn" title="Export ready-to-use code for your website">
+        ⚡ Export Code
+      </button>
+      <button class="btn btn-icon" id="open-sidebar-btn" title="Open Studio Panel" aria-label="Open studio panel" aria-expanded="true">
+        ⚙️
+      </button>
+    </div>
+  </header>
+
+  <!-- Sidebar Studio Panel -->
+  <aside class="sidebar" id="sidebar-panel" aria-label="SplashCursor studio controls">
+    <div class="sidebar-header">
+      <div class="sidebar-title">
+        <span>🎛️ Studio Controls</span>
+      </div>
+      <div style="display: flex; gap: 8px;">
+        <button class="btn btn-icon" id="reset-btn" title="Reset to Defaults" aria-label="Reset to defaults">🔄</button>
+        <button class="btn btn-icon" id="toggle-sidebar-btn" title="Collapse Panel" aria-label="Collapse studio panel">✕</button>
+      </div>
+    </div>
+
+    <!-- Navigation Tabs -->
+    <nav class="panel-tabs" aria-label="Studio sections">
+      <button class="tab-btn active" data-tab="presets" aria-controls="tab-presets" aria-selected="true">Presets</button>
+      <button class="tab-btn" data-tab="dynamics" aria-controls="tab-dynamics" aria-selected="false">Dynamics</button>
+      <button class="tab-btn" data-tab="color" aria-controls="tab-color" aria-selected="false">Colors</button>
+      <button class="tab-btn" data-tab="bloom" aria-controls="tab-bloom" aria-selected="false">Bloom & 3D</button>
+      <button class="tab-btn" data-tab="advanced" aria-controls="tab-advanced" aria-selected="false">Advanced</button>
+    </nav>
+
+    <!-- Scrollable Panel Body -->
+    <div class="panel-content">
+
+      <!-- TAB 1: PRESETS -->
+      <div class="tab-pane active" id="tab-presets">
+        <div class="section-heading">Curated & Saved Presets</div>
+        <div class="presets-grid" id="presets-grid">
+          <!-- Dynamically populated via app.js -->
+        </div>
+
+        <div style="margin-top: 10px; display: flex; gap: 10px;">
+          <button class="btn" id="import-json-btn" style="width: 100%; justify-content: center;">
+            📥 Import JSON Preset
+          </button>
+        </div>
+      </div>
+
+      <!-- TAB 2: FLUID DYNAMICS -->
+      <div class="tab-pane" id="tab-dynamics">
+        <div class="section-heading">Physics & Flow</div>
+
+        <div class="control-card">
+          <div class="control-row">
+            <div class="control-label-row">
+              <span>Swirliness / Curl (Turbulence)</span>
+              <span class="control-value" id="curl-val">30</span>
+            </div>
+            <input type="range" id="curl-slider" min="0" max="60" step="1" value="30" aria-label="Swirliness and curl">
+          </div>
+
+          <div class="control-row">
+            <div class="control-label-row">
+              <span>Density Dissipation (Color Fade)</span>
+              <span class="control-value" id="dissipation-val">1</span>
+            </div>
+            <input type="range" id="dissipation-slider" min="0" max="4.0" step="0.05" value="1" aria-label="Density dissipation">
+          </div>
+
+          <div class="control-row">
+            <div class="control-label-row">
+              <span>Velocity Dissipation (Motion Slowdown)</span>
+              <span class="control-value" id="velocity-diss-val">0.2</span>
+            </div>
+            <input type="range" id="velocity-diss-slider" min="0" max="2.0" step="0.05" value="0.2" aria-label="Velocity dissipation">
+          </div>
+        </div>
+
+        <div class="section-heading">Pointer & Force</div>
+
+        <div class="control-card">
+          <div class="control-row">
+            <div class="control-label-row">
+              <span>Splat Radius</span>
+              <span class="control-value" id="radius-val">0.25</span>
+            </div>
+            <input type="range" id="radius-slider" min="0.05" max="0.8" step="0.01" value="0.25" aria-label="Splat radius">
+          </div>
+
+          <div class="control-row">
+            <div class="control-label-row">
+              <span>Splat Force</span>
+              <span class="control-value" id="force-val">6000</span>
+            </div>
+            <input type="range" id="force-slider" min="1000" max="12000" step="250" value="6000" aria-label="Splat force">
+          </div>
+
+          <div class="control-row">
+            <div class="control-label-row">
+              <span>Fluid Pressure</span>
+              <span class="control-value" id="pressure-val">0.8</span>
+            </div>
+            <input type="range" id="pressure-slider" min="0.1" max="1.0" step="0.05" value="0.8" aria-label="Fluid pressure">
+          </div>
+        </div>
+      </div>
+
+      <!-- TAB 3: COLORS & STYLES -->
+      <div class="tab-pane" id="tab-color">
+        <div class="section-heading">Color Mode</div>
+
+        <div class="control-card">
+          <div class="control-row">
+            <div class="control-label-row">
+              <span>Spectrum Mode</span>
+            </div>
+            <select id="color-mode-select" aria-label="Color mode">
+              <option value="rainbow">🌈 Spectrum Rainbow</option>
+              <option value="dual">🎨 Dual Color Blend</option>
+              <option value="single">🎯 Single Accent Color</option>
+              <option value="palette">🖌️ Custom Palette (Time)</option>
+              <option value="velocity-palette">🚀 Velocity Palette</option>
+              <option value="density-palette">💨 Density Palette</option>
+            </select>
+          </div>
+
+          <div class="control-row" id="primary-color-group">
+            <div class="control-label-row">
+              <span>Primary Fluid Color</span>
+            </div>
+            <input type="color" id="primary-color-picker" value="#00f0ff" aria-label="Primary fluid color">
+          </div>
+
+          <div class="control-row" id="secondary-color-group">
+            <div class="control-label-row">
+              <span>Secondary Blend Color</span>
+            </div>
+            <input type="color" id="secondary-color-picker" value="#ff007f" aria-label="Secondary fluid color">
+          </div>
+
+          <div class="control-row" id="palette-color-group" style="display: none;">
+            <div class="control-label-row">
+              <span>Palette Colors</span>
+              <button class="btn btn-icon" id="add-palette-color-btn" title="Add Color" style="padding: 2px 8px; font-size: 0.8rem;">+ Add</button>
+            </div>
+            <div id="palette-colors-container" style="display: flex; gap: 8px; flex-wrap: wrap; margin-top: 10px; margin-bottom: 10px;">
+              <!-- Dynamic colors added here -->
+            </div>
+            
+            <div class="control-row" id="velocity-sensitivity-row" style="margin-top: 10px;">
+              <div class="control-label-row">
+                <span>Velocity Sensitivity</span>
+                <span class="control-value" id="velocity-sens-val">4000</span>
+              </div>
+              <input type="range" id="velocity-sens-slider" min="500" max="10000" step="100" value="4000" aria-label="Velocity color sensitivity">
+            </div>
+
+            <div class="control-row" id="density-sensitivity-row" style="margin-top: 10px;">
+              <div class="control-label-row">
+                <span>Density Sensitivity</span>
+                <span class="control-value" id="density-sens-val">50</span>
+              </div>
+              <input type="range" id="density-sens-slider" min="1" max="200" step="1" value="50" aria-label="Density color sensitivity">
+            </div>
+          </div>
+
+          <div class="control-row" id="color-speed-row">
+            <div class="control-label-row">
+              <span>Color Shift Speed</span>
+              <span class="control-value" id="color-speed-val">10</span>
+            </div>
+            <input type="range" id="color-speed-slider" min="1" max="30" step="1" value="10" aria-label="Color shift speed">
+          </div>
+        </div>
+
+        <div class="section-heading">Background & Transparency</div>
+
+        <div class="control-card">
+          <div class="control-row">
+            <div class="control-label-row">
+              <span>Background Canvas Color</span>
+            </div>
+            <input type="color" id="back-color-picker" value="#05050c" aria-label="Background canvas color">
+          </div>
+
+          <div class="switch-row">
+            <span style="font-size: 0.88rem; font-weight: 500;">Transparent Background</span>
+            <label class="switch">
+              <input type="checkbox" id="transparent-toggle" aria-label="Transparent background">
+              <span class="slider-toggle"></span>
+            </label>
+          </div>
+        </div>
+      </div>
+
+      <!-- TAB 4: BLOOM & SHADING -->
+      <div class="tab-pane" id="tab-bloom">
+        <div class="section-heading">3D Shading & Highlights</div>
+
+        <div class="control-card">
+          <div class="switch-row">
+            <div>
+              <div style="font-size: 0.88rem; font-weight: 600;">3D Liquid Specular Shading</div>
+              <div style="font-size: 0.75rem; color: var(--text-muted);">Gives fluid glossy metallic reflections</div>
+            </div>
+            <label class="switch">
+              <input type="checkbox" id="shading-toggle" checked aria-label="Enable 3D liquid shading">
+              <span class="slider-toggle"></span>
+            </label>
+          </div>
+        </div>
+
+        <div class="section-heading">Post-Process Glow (Bloom)</div>
+
+        <div class="control-card">
+          <div class="switch-row">
+            <span style="font-size: 0.88rem; font-weight: 600;">Enable Glow Bloom</span>
+            <label class="switch">
+              <input type="checkbox" id="bloom-toggle" checked aria-label="Enable glow bloom">
+              <span class="slider-toggle"></span>
+            </label>
+          </div>
+
+          <div class="control-row">
+            <div class="control-label-row">
+              <span>Glow Intensity</span>
+              <span class="control-value" id="bloom-intensity-val">0.8</span>
+            </div>
+            <input type="range" id="bloom-intensity-slider" min="0.1" max="2.0" step="0.05" value="0.8" aria-label="Glow intensity">
+          </div>
+
+          <div class="control-row">
+            <div class="control-label-row">
+              <span>Glow Threshold</span>
+              <span class="control-value" id="bloom-threshold-val">0.6</span>
+            </div>
+            <input type="range" id="bloom-threshold-slider" min="0.1" max="1.0" step="0.05" value="0.6" aria-label="Glow threshold">
+          </div>
+        </div>
+      </div>
+
+      <!-- TAB 5: ADVANCED -->
+      <div class="tab-pane" id="tab-advanced">
+        <div class="section-heading">Auto Motion & Interaction</div>
+
+        <div class="control-card">
+          <div class="switch-row">
+            <div>
+              <span style="font-size: 0.88rem; font-weight: 500;">Ambient Background Flow</span>
+              <div style="font-size: 0.75rem; color: var(--text-muted);">Continuous wandering fluid effect</div>
+            </div>
+            <label class="switch">
+              <input type="checkbox" id="flow-background-toggle" aria-label="Enable ambient background flow">
+              <span class="slider-toggle"></span>
+            </label>
+          </div>
+
+          <div class="control-row">
+            <div class="control-label-row">
+              <span>Ambient Flow Speed</span>
+              <span class="control-value" id="flow-speed-val">1.0</span>
+            </div>
+            <input type="range" id="flow-speed-slider" min="0.1" max="5.0" step="0.1" value="1.0" aria-label="Ambient flow speed">
+          </div>
+
+          <div class="control-row">
+            <div class="control-label-row">
+              <span>Ambient Flow Force</span>
+              <span class="control-value" id="flow-force-val">2000</span>
+            </div>
+            <input type="range" id="flow-force-slider" min="0" max="10000" step="10" value="2000" aria-label="Ambient flow force">
+          </div>
+
+          <div class="control-row">
+            <div class="control-label-row">
+              <span>Ambient Flow Faintness</span>
+              <span class="control-value" id="flow-faintness-val">8.0</span>
+            </div>
+            <input type="range" id="flow-faintness-slider" min="0.0" max="20.0" step="0.5" value="8.0" aria-label="Ambient flow faintness">
+          </div>
+
+          <div class="switch-row">
+            <span style="font-size: 0.88rem; font-weight: 500;">Random Burst Splats</span>
+            <label class="switch">
+              <input type="checkbox" id="auto-splat-toggle" aria-label="Enable random burst splats">
+              <span class="slider-toggle"></span>
+            </label>
+          </div>
+
+          <div class="switch-row">
+            <span style="font-size: 0.88rem; font-weight: 500;">Hover Splats (No Click Needed)</span>
+            <label class="switch">
+              <input type="checkbox" id="hover-splat-toggle" checked aria-label="Enable hover splats">
+              <span class="slider-toggle"></span>
+            </label>
+          </div>
+
+          <div class="switch-row">
+            <div>
+              <span style="font-size: 0.88rem; font-weight: 500;">Global Pointer Tracking</span>
+              <div style="font-size: 0.75rem; color: var(--text-muted);">Effect happens even under UI windows</div>
+            </div>
+            <label class="switch">
+              <input type="checkbox" id="global-tracking-toggle" aria-label="Enable global pointer tracking">
+              <span class="slider-toggle"></span>
+            </label>
+          </div>
+        </div>
+
+        <div class="section-heading">Performance Resolution</div>
+
+        <div class="control-card">
+          <div class="control-row">
+            <div class="control-label-row">
+              <span>Simulation Resolution Grid</span>
+            </div>
+            <select id="sim-res-select" aria-label="Simulation resolution">
+              <option value="64">64 (Fastest / Low GPU)</option>
+              <option value="128" selected>128 (Balanced Standard)</option>
+              <option value="256">256 (Ultra High Detail)</option>
+            </select>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </aside>
+
+  <!-- Sandbox Web Site UI Preview Layer -->
+  <main class="sandbox-overlay" id="sandbox-overlay">
+    <div class="sandbox-hero">
+      <div class="sandbox-badge">✨ Interactive Fluid Background</div>
+      <h1 class="sandbox-title">Fluid Motion Experience for Modern Web</h1>
+      <p class="sandbox-subtitle">
+        Move your cursor across the screen to feel the GPU fluid simulation. Customize every physics parameter, create unique glowing themes, and export drop-in code snippets for your web apps.
+      </p>
+      <div class="sandbox-cta-group">
+        <button class="btn btn-primary" id="sandbox-splat-btn">
+          🚀 Trigger Burst
+        </button>
+        <button class="btn" id="sandbox-settings-btn">
+          🎛️ Tune Settings
+        </button>
+      </div>
+    </div>
+  </main>
+
+  <!-- Export Code Modal -->
+  <div class="modal-backdrop" id="export-modal" role="dialog" aria-modal="true" aria-hidden="true" aria-labelledby="export-modal-title" inert>
+    <div class="modal-container">
+      <div class="modal-header">
+        <div class="modal-title" id="export-modal-title">⚡ Export Reusable SplashCursor Code</div>
+        <button class="btn btn-icon" id="close-modal-btn" aria-label="Close export dialog">✕</button>
+      </div>
+      <div class="modal-body">
+        <div class="code-tabs">
+          <button class="tab-btn code-tab-btn active" data-format="html">Vanilla HTML / JS Script</button>
+          <button class="tab-btn code-tab-btn" data-format="react">React Component</button>
+          <button class="tab-btn code-tab-btn" data-format="json">Raw Config JSON</button>
+        </div>
+
+        <div class="code-block-wrapper">
+          <button class="btn btn-primary copy-code-btn" id="copy-code-btn">📋 Copy Code</button>
+          <pre tabindex="0"><code id="code-output"></code></pre>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Save / Import Dialog -->
+  <div class="modal-backdrop" id="settings-input-modal" role="dialog" aria-modal="true" aria-hidden="true" aria-labelledby="settings-input-title" inert>
+    <div class="modal-container input-modal-container">
+      <div class="modal-header">
+        <div class="modal-title" id="settings-input-title">Save Preset</div>
+        <button class="btn btn-icon" id="close-input-modal-btn" aria-label="Close dialog">✕</button>
+      </div>
+      <div class="modal-body">
+        <div class="modal-field" id="preset-name-field">
+          <label for="preset-name-input">Preset name</label>
+          <input type="text" id="preset-name-input" maxlength="80" autocomplete="off" placeholder="My Liquid Glow">
+        </div>
+        <div class="modal-field" id="preset-json-field" hidden>
+          <label for="preset-json-input">SplashCursor configuration JSON</label>
+          <textarea id="preset-json-input" rows="10" spellcheck="false" placeholder='{"COLOR_MODE":"density-palette"}'></textarea>
+        </div>
+        <div class="modal-actions">
+          <button class="btn" id="cancel-input-modal-btn">Cancel</button>
+          <button class="btn btn-primary" id="confirm-input-modal-btn">Save Preset</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Scripts -->
+  <script src="splash-cursor.js?v=20260814-4"></script>
+  <script src="app.js?v=20260814-4"></script>
+</body>
+</html>

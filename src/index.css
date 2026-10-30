@@ -1,0 +1,99 @@
+@import "tailwindcss";
+
+@layer base {
+  :root {
+    font-family: 'Vazirmatn', 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
+  }
+
+  html[dir="rtl"] {
+    font-family: 'Vazirmatn', system-ui, -apple-system, sans-serif;
+  }
+
+  html[dir="ltr"] {
+    font-family: 'Plus Jakarta Sans', 'Vazirmatn', system-ui, -apple-system, sans-serif;
+  }
+
+  body {
+    background-color: #05050c;
+    color: #f8fafc;
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+}
+
+/* Transparent overlay container so the WebGL SplashCursor smoky simulation shines through */
+.bg-persian-cyber {
+  background-color: transparent;
+}
+
+/* Card entrance & flip animation */
+@keyframes cardPopIn {
+  0% {
+    opacity: 0;
+    transform: translateY(16px) scale(0.95) rotateX(8deg);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0) scale(1) rotateX(0deg);
+  }
+}
+
+.animate-card-pop {
+  animation: cardPopIn 0.32s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+/* Floating reaction animation */
+@keyframes floatUpFade {
+  0% {
+    opacity: 0;
+    transform: translateY(20px) scale(0.6);
+  }
+  20% {
+    opacity: 1;
+    transform: translateY(0px) scale(1.15);
+  }
+  80% {
+    opacity: 1;
+    transform: translateY(-90px) scale(1);
+  }
+  100% {
+    opacity: 0;
+    transform: translateY(-140px) scale(0.85);
+  }
+}
+
+.animate-float-up {
+  animation: floatUpFade 2.4s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+}
+
+/* Screen flash feedback for Correct / Taboo */
+@keyframes screenShake {
+  0%, 100% { transform: translateX(0); }
+  20% { transform: translateX(-8px) rotate(-0.5deg); }
+  40% { transform: translateX(8px) rotate(0.5deg); }
+  60% { transform: translateX(-6px); }
+  80% { transform: translateX(6px); }
+}
+
+.animate-buzzer-shake {
+  animation: screenShake 0.4s ease-in-out;
+}
+
+/* Custom sleek scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: rgba(15, 23, 42, 0.4);
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(148, 163, 184, 0.25);
+  border-radius: 9999px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(148, 163, 184, 0.45);
+}
