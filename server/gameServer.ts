@@ -87,6 +87,65 @@ export function setupGameServer(httpServer: HttpServer, app: Express) {
     });
   });
 
+  // Terms of Service & Privacy Policy pages for Discord App Verification
+  app.get(['/terms', '/terms-of-service'], (_req, res) => {
+    res.setHeader('Content-Type', 'text/html; charset=utf-8');
+    res.send(`<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Terms of Service — HadesHood Taboo</title>
+  <style>
+    body { font-family: system-ui, -apple-system, sans-serif; background: #090a14; color: #f8fafc; max-width: 720px; margin: 40px auto; padding: 0 20px; line-height: 1.6; }
+    h1, h2 { color: #38bdf8; }
+    .card { background: #0f172a; border: 1px solid rgba(255,255,255,0.1); border-radius: 16px; padding: 28px; }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <h1>Terms of Service — HadesHood Taboo</h1>
+    <p><strong>Last Updated:</strong> October 2026</p>
+    <h2>1. Acceptance of Terms</h2>
+    <p>By accessing or playing HadesHood Taboo ("the Activity") via Discord or web browser, you agree to these Terms of Service.</p>
+    <h2>2. Fair Play & Conduct</h2>
+    <p>Players must follow Discord's Community Guidelines and Terms of Service at all times while using the Activity, including when submitting guesses or creating custom cards in a game room.</p>
+    <h2>3. Availability</h2>
+    <p>The Activity is provided "as is" free of charge for entertainment purposes without warranties of any kind.</p>
+  </div>
+</body>
+</html>`);
+  });
+
+  app.get(['/privacy', '/privacy-policy'], (_req, res) => {
+    res.setHeader('Content-Type', 'text/html; charset=utf-8');
+    res.send(`<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Privacy Policy — HadesHood Taboo</title>
+  <style>
+    body { font-family: system-ui, -apple-system, sans-serif; background: #090a14; color: #f8fafc; max-width: 720px; margin: 40px auto; padding: 0 20px; line-height: 1.6; }
+    h1, h2 { color: #38bdf8; }
+    .card { background: #0f172a; border: 1px solid rgba(255,255,255,0.1); border-radius: 16px; padding: 28px; }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <h1>Privacy Policy — HadesHood Taboo</h1>
+    <p><strong>Last Updated:</strong> October 2026</p>
+    <h2>1. Data We Access</h2>
+    <p>When launched inside Discord, HadesHood Taboo accesses your basic Discord profile (User ID, display name, and avatar URL) solely to display your player profile in the active game room.</p>
+    <h2>2. Ephemeral In-Memory Game State</h2>
+    <p>All game rooms, scores, guesses, and custom cards are stored temporarily in server memory only during an active session and are never sold or shared with third parties.</p>
+    <h2>3. Contact</h2>
+    <p>If you have questions regarding this Privacy Policy, you may contact the developer team through Discord.</p>
+  </div>
+</body>
+</html>`);
+  });
+
   app.get('/api/cards', (req, res) => {
     const lang = req.query.lang === 'en' ? 'en' : 'fa';
     res.json({ cards: baseDecks[lang] });
