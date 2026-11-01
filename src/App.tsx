@@ -48,6 +48,15 @@ export const App: React.FC = () => {
     }
     return 'dark';
   });
+  const [smokeEnabled, setSmokeEnabled] = useState<boolean>(() => {
+    try {
+      const saved = localStorage.getItem('hadeshood_smoke');
+      if (saved === 'false') return false;
+    } catch {
+      // ignore storage errors
+    }
+    return true;
+  });
   const [soundEnabled, setSoundEnabled] = useState<boolean>(true);
   const [profile, setProfile] = useState<DiscordUserProfile | null>(null);
   const [roomId, setRoomId] = useState<string>('NEON-1');
@@ -170,6 +179,27 @@ export const App: React.FC = () => {
             avatarUrl: initializedProfile.avatarUrl,
           },
         });
+
+        // Re-sync any custom cards saved in localStorage so they persist across server restarts
+        try {
+          const rawSaved = localStorage.getItem('hadeshood_custom_cards_v1');
+          if (rawSaved) {
+            const savedCards = JSON.parse(rawSaved) as Array<{
+              word: string;
+              forbiddenWords: string[];
+              lang: 'fa' | 'en';
+            }>;
+            if (Array.isArray(savedCards)) {
+              savedCards.forEach((c) => {
+                if (c.word && Array.isArray(c.forbiddenWords)) {
+                  s.emit('add_custom_card', c);
+                }
+              });
+            }
+          }
+        } catch {
+          // ignore storage errors
+        }
       });
 
       s.on('room_state', (state: RoomState) => {
@@ -282,6 +312,18 @@ export const App: React.FC = () => {
     setTheme((prev) => (prev === 'dark' ? 'light' : 'dark'));
   }, []);
 
+  const handleToggleSmoke = useCallback(() => {
+    setSmokeEnabled((prev) => {
+      const next = !prev;
+      try {
+        localStorage.setItem('hadeshood_smoke', String(next));
+      } catch {
+        // ignore storage errors
+      }
+      return next;
+    });
+  }, []);
+
   const handleToggleSound = useCallback(() => {
     setSoundEnabled((prev) => {
       const next = !prev;
@@ -290,23 +332,6 @@ export const App: React.FC = () => {
       return next;
     });
   }, []);
-
-  const handleChangeRoom = useCallback(
-    (newRoomId: string) => {
-      if (!socket || !profile) return;
-      setRoomId(newRoomId);
-      socket.emit('join_room', {
-        roomId: newRoomId,
-        profile: {
-          id: profile.id,
-          username: profile.username,
-          displayName: profile.displayName,
-          avatarUrl: profile.avatarUrl,
-        },
-      });
-    },
-    [socket, profile]
-  );
 
   const handleSaveProfile = useCallback(
     (displayName: string, avatarUrl: string) => {
@@ -334,7 +359,7 @@ export const App: React.FC = () => {
   if (!profile || !roomState) {
     return (
       <div className="min-h-screen bg-persian-cyber flex flex-col items-center justify-center p-6 text-center relative">
-        <SplashCursorBackground theme={theme} />
+        <SplashCursorBackground theme={theme} enabled={smokeEnabled} />
         <div className="relative z-10 flex flex-col items-center">
           <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-cyan-500 to-rose-500 p-[2px] animate-spin mb-4">
             <div className="w-full h-full bg-slate-950 rounded-[14px]" />
@@ -364,8 +389,12 @@ export const App: React.FC = () => {
     (p) => p.id === roomState.turn.describerId
   );
 
-  const activeDeckList =
+  const baseDeckForLang =
     roomState.settings.deckLanguage === 'en' ? deckCards.en : deckCards.fa;
+  const customForLang = (roomState.customCards || []).filter(
+    (c) => !c.lang || c.lang === roomState.settings.deckLanguage
+  );
+  const activeDeckList = [...customForLang, ...baseDeckForLang];
 
   return (
     <div
@@ -374,7 +403,7 @@ export const App: React.FC = () => {
       }`}
     >
       {/* Interactive WebGL Smoky Fluid Simulation Background */}
-      <SplashCursorBackground theme={theme} />
+      <SplashCursorBackground theme={theme} enabled={smokeEnabled} />
 
       <div className="relative z-10 flex flex-col min-h-screen justify-between">
       {/* Top Navigation Bar */}
@@ -383,11 +412,11 @@ export const App: React.FC = () => {
         onToggleLang={handleToggleLang}
         theme={theme}
         onToggleTheme={handleToggleTheme}
+        smokeEnabled={smokeEnabled}
+        onToggleSmoke={handleToggleSmoke}
         soundEnabled={soundEnabled}
         onToggleSound={handleToggleSound}
         profile={profile}
-        roomId={roomState.roomId}
-        onChangeRoom={handleChangeRoom}
         onOpenRules={() => setRulesOpen(true)}
         onOpenDeckBrowser={() => setDeckBrowserOpen(true)}
         onOpenCustomCard={() => setCustomCardOpen(true)}
@@ -613,9 +642,30 @@ export const App: React.FC = () => {
         isOpen={customCardOpen}
         onClose={() => setCustomCardOpen(false)}
         lang={lang}
-        onAddCard={(word, forbiddenWords) =>
-          socket?.emit('add_custom_card', { word, forbiddenWords, lang })
-        }
+        onAddCard={(word, forbiddenWords) => {
+          const cardPayload = {
+            word,
+            forbiddenWords,
+            lang: roomState.settings.deckLanguage,
+          };
+          socket?.emit('add_custom_card', cardPayload);
+          try {
+            const rawSaved = localStorage.getItem('hadeshood_custom_cards_v1');
+            const prev = rawSaved ? JSON.parse(rawSaved) : [];
+            const next = Array.isArray(prev)
+              ? [
+                  cardPayload,
+                  ...prev.filter(
+                    (c: { word?: string }) =>
+                      c.word?.toLowerCase() !== word.toLowerCase()
+                  ),
+                ].slice(0, 200)
+              : [cardPayload];
+            localStorage.setItem('hadeshood_custom_cards_v1', JSON.stringify(next));
+          } catch {
+            // ignore storage errors
+          }
+        }}
       />
 
       <DeckBrowserModal

@@ -15,6 +15,7 @@ import {
 } from 'lucide-react';
 import { translations, formatNumber } from '../i18n/translations';
 import type { Language, Player, RoomState } from '../types/game';
+import { AVATAR_PRESETS, getSafeAvatarUrl } from '../utils/avatars';
 import { soundFX } from '../utils/sound';
 
 export const PreTurnScreen: React.FC<{
@@ -64,8 +65,11 @@ export const PreTurnScreen: React.FC<{
                 }`}
               />
               <img
-                src={describer.avatarUrl}
-                alt={describer.displayName}
+                src={getSafeAvatarUrl(describer.avatarUrl, 0)}
+                alt=""
+                onError={(e) => {
+                  e.currentTarget.src = AVATAR_PRESETS[0];
+                }}
                 className="relative w-20 h-20 rounded-full border-2 border-white bg-slate-800 object-cover"
               />
               <span className="absolute -bottom-1 -end-1 w-7 h-7 rounded-full bg-amber-400 text-slate-950 flex items-center justify-center shadow">
@@ -297,8 +301,11 @@ export const GameOverScreen: React.FC<{
           <div className="max-w-md mx-auto mb-6 p-4 rounded-2xl bg-gradient-to-r from-amber-500/15 via-indigo-500/15 to-amber-500/15 border border-amber-400/30 flex items-center justify-between gap-3">
             <div className="flex items-center gap-3">
               <img
-                src={mvp.avatarUrl}
-                alt={mvp.displayName}
+                src={getSafeAvatarUrl(mvp.avatarUrl, 0)}
+                alt=""
+                onError={(e) => {
+                  e.currentTarget.src = AVATAR_PRESETS[0];
+                }}
                 className="w-12 h-12 rounded-full border-2 border-amber-400 bg-slate-800"
               />
               <div className="text-start">

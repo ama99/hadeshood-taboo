@@ -23,6 +23,7 @@ import {
 import { translations, formatNumber } from '../i18n/translations';
 import type { CardCategory } from '../data/cards';
 import type { GameSettings, Language, RoomState, TeamId } from '../types/game';
+import { AVATAR_PRESETS, getSafeAvatarUrl } from '../utils/avatars';
 import { soundFX } from '../utils/sound';
 
 interface LobbyViewProps {
@@ -166,8 +167,11 @@ export const LobbyView: React.FC<LobbyViewProps> = ({
                   >
                     <div className="flex items-center gap-2.5 min-w-0">
                       <img
-                        src={p.avatarUrl}
-                        alt={p.displayName}
+                        src={getSafeAvatarUrl(p.avatarUrl, 0)}
+                        alt=""
+                        onError={(e) => {
+                          e.currentTarget.src = AVATAR_PRESETS[0];
+                        }}
                         className="w-9 h-9 rounded-full bg-slate-800 border border-cyan-400/40 shrink-0"
                       />
                       <div className="min-w-0">
@@ -241,8 +245,11 @@ export const LobbyView: React.FC<LobbyViewProps> = ({
                   >
                     <div className="flex items-center gap-2.5 min-w-0">
                       <img
-                        src={p.avatarUrl}
-                        alt={p.displayName}
+                        src={getSafeAvatarUrl(p.avatarUrl, 1)}
+                        alt=""
+                        onError={(e) => {
+                          e.currentTarget.src = AVATAR_PRESETS[1];
+                        }}
                         className="w-9 h-9 rounded-full bg-slate-800 border border-rose-400/40 shrink-0"
                       />
                       <div className="min-w-0">

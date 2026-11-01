@@ -1,20 +1,19 @@
-import React, { useState } from 'react';
+import React from 'react';
 import {
   Globe,
   Volume2,
   VolumeX,
   HelpCircle,
   BookOpen,
-  Copy,
-  Check,
-  Hash,
   Edit3,
   PlusCircle,
   Sun,
   Moon,
+  Flame,
 } from 'lucide-react';
 import { translations, formatNumber } from '../i18n/translations';
 import type { DiscordUserProfile, Language, ThemeMode } from '../types/game';
+import { AVATAR_PRESETS, getSafeAvatarUrl } from '../utils/avatars';
 import { soundFX } from '../utils/sound';
 
 interface TopBarProps {
@@ -22,11 +21,11 @@ interface TopBarProps {
   onToggleLang: () => void;
   theme: ThemeMode;
   onToggleTheme: () => void;
+  smokeEnabled: boolean;
+  onToggleSmoke: () => void;
   soundEnabled: boolean;
   onToggleSound: () => void;
   profile: DiscordUserProfile;
-  roomId: string;
-  onChangeRoom: (newRoomId: string) => void;
   onOpenRules: () => void;
   onOpenDeckBrowser: () => void;
   onOpenCustomCard: () => void;
@@ -39,11 +38,11 @@ export const TopBar: React.FC<TopBarProps> = ({
   onToggleLang,
   theme,
   onToggleTheme,
+  smokeEnabled,
+  onToggleSmoke,
   soundEnabled,
   onToggleSound,
   profile,
-  roomId,
-  onChangeRoom,
   onOpenRules,
   onOpenDeckBrowser,
   onOpenCustomCard,
@@ -51,25 +50,6 @@ export const TopBar: React.FC<TopBarProps> = ({
   totalCardsCount,
 }) => {
   const t = translations[lang];
-  const [copied, setCopied] = useState(false);
-  const [showRoomInput, setShowRoomInput] = useState(false);
-  const [roomInputVal, setRoomInputVal] = useState('');
-
-  const handleCopyRoom = () => {
-    soundFX.playClick();
-    navigator.clipboard?.writeText(roomId).catch(() => {});
-    setCopied(true);
-    setTimeout(() => setCopied(false), 1800);
-  };
-
-  const handleRoomSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!roomInputVal.trim()) return;
-    soundFX.playClick();
-    onChangeRoom(roomInputVal.trim().toUpperCase());
-    setRoomInputVal('');
-    setShowRoomInput(false);
-  };
 
   return (
     <header className="sticky top-0 z-30 w-full backdrop-blur-xl bg-slate-950/75 border-b border-white/10 px-3 sm:px-6 py-2.5">
@@ -79,59 +59,9 @@ export const TopBar: React.FC<TopBarProps> = ({
           <h1 className="text-lg sm:text-xl font-black tracking-tight bg-gradient-to-r from-cyan-300 via-white to-rose-300 bg-clip-text text-transparent">
             {t.appTitle}
           </h1>
-          <span className="hidden md:inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-bold bg-indigo-500/20 text-indigo-300 border border-indigo-500/30">
-            Discord Activity
-          </span>
         </div>
 
-        {/* Center Room Badge */}
-        <div className="relative flex items-center gap-1.5 bg-slate-900/90 border border-white/10 rounded-xl px-2.5 py-1.5">
-          <Hash className="w-3.5 h-3.5 text-cyan-400" />
-          <span className="text-xs text-slate-400 hidden sm:inline">{t.roomCode}:</span>
-          <span className="text-xs sm:text-sm font-mono font-bold text-cyan-300 tracking-wider px-1">
-            {roomId}
-          </span>
-          <button
-            onClick={handleCopyRoom}
-            title={t.copyRoom}
-            className="p-1 rounded-lg hover:bg-white/10 text-slate-300 hover:text-white transition cursor-pointer"
-          >
-            {copied ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5" />}
-          </button>
-          <button
-            onClick={() => {
-              soundFX.playClick();
-              setShowRoomInput((prev) => !prev);
-            }}
-            className="text-[11px] font-semibold px-2 py-0.5 rounded-lg bg-white/5 hover:bg-white/15 text-slate-300 transition cursor-pointer"
-          >
-            {t.changeRoom}
-          </button>
-
-          {showRoomInput && (
-            <form
-              onSubmit={handleRoomSubmit}
-              className="absolute top-full mt-2 start-0 bg-slate-900 border border-white/15 rounded-xl p-2 shadow-2xl flex items-center gap-1.5 z-50 min-w-[230px]"
-            >
-              <input
-                type="text"
-                value={roomInputVal}
-                onChange={(e) => setRoomInputVal(e.target.value)}
-                placeholder={t.joinRoomPlaceholder}
-                className="w-full bg-slate-950 border border-white/10 rounded-lg px-2.5 py-1 text-xs text-white focus:outline-none focus:border-cyan-400"
-                autoFocus
-              />
-              <button
-                type="submit"
-                className="px-2.5 py-1 rounded-lg bg-cyan-500 hover:bg-cyan-400 text-slate-950 font-bold text-xs transition cursor-pointer shrink-0"
-              >
-                {t.joinBtn}
-              </button>
-            </form>
-          )}
-        </div>
-
-        {/* Right Controls: User Profile, Deck Browser, Rules, Sound, Language */}
+        {/* Right Controls: User Profile, Deck Browser, Rules, Smoke, Theme, Sound, Language */}
         <div className="flex items-center gap-1.5 sm:gap-2">
           {/* Discord / Local Profile Pill */}
           <button
@@ -143,11 +73,14 @@ export const TopBar: React.FC<TopBarProps> = ({
             className="flex items-center gap-2 bg-slate-900/80 hover:bg-slate-800/80 border border-white/10 rounded-xl px-2.5 py-1.5 transition cursor-pointer"
           >
             <img
-              src={profile.avatarUrl}
-              alt={profile.displayName}
-              className="w-6 h-6 rounded-full object-cover ring-1 ring-cyan-400/50 bg-slate-800"
+              src={getSafeAvatarUrl(profile.avatarUrl, 0)}
+              alt=""
+              onError={(e) => {
+                e.currentTarget.src = AVATAR_PRESETS[0];
+              }}
+              className="w-6 h-6 rounded-full object-cover ring-1 ring-cyan-400/50 bg-slate-800 shrink-0"
             />
-            <div className="text-start hidden lg:block">
+            <div className="text-start hidden sm:block">
               <div className="text-xs font-bold text-slate-100 leading-none flex items-center gap-1.5">
                 <span className="truncate max-w-[120px]">{profile.displayName}</span>
                 <Edit3 className="w-3 h-3 text-slate-400" />
@@ -194,6 +127,22 @@ export const TopBar: React.FC<TopBarProps> = ({
             className="p-2 rounded-xl bg-slate-900 hover:bg-slate-800 border border-white/10 text-slate-300 hover:text-white transition cursor-pointer"
           >
             <HelpCircle className="w-4 h-4 text-amber-400" />
+          </button>
+
+          {/* Smoke Simulation Toggle (ON / OFF) */}
+          <button
+            onClick={() => {
+              soundFX.playClick();
+              onToggleSmoke();
+            }}
+            title={smokeEnabled ? t.smokeOn : t.smokeOff}
+            className={`p-2 rounded-xl border transition cursor-pointer ${
+              smokeEnabled
+                ? 'bg-cyan-500/20 hover:bg-cyan-500/30 border-cyan-400/40 text-cyan-300'
+                : 'bg-slate-900 hover:bg-slate-800 border-white/10 text-slate-500'
+            }`}
+          >
+            <Flame className={`w-4 h-4 ${smokeEnabled ? 'text-cyan-400' : 'text-slate-500'}`} />
           </button>
 
           {/* Theme Toggle (Dark <-> Light) */}

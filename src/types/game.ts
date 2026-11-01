@@ -116,6 +116,7 @@ export interface RoomState {
   settings: GameSettings;
   turn: TurnState;
   guesses: ChatGuessEntry[];
+  customCards?: TabooCard[];
   customCardsCount: number;
   totalDeckSize: number;
   remainingDeckSize: number;

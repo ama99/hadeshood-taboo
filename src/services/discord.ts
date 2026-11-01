@@ -1,18 +1,8 @@
 import { DiscordSDK, DiscordSDKMock } from '@discord/embedded-app-sdk';
 import type { DiscordUserProfile } from '../types/game';
+import { AVATAR_PRESETS, getSafeAvatarUrl } from '../utils/avatars';
 
 const DISCORD_CLIENT_ID = import.meta.env.VITE_DISCORD_CLIENT_ID || '1566438121787363389';
-
-const AVATAR_SEEDS = [
-  'Felix',
-  'Aneka',
-  'Jasper',
-  'Milo',
-  'Luna',
-  'Zoe',
-  'Leo',
-  'Maya',
-];
 
 let discordSdkInstance: DiscordSDK | DiscordSDKMock | null = null;
 
@@ -34,20 +24,21 @@ export function getOrCreateLocalProfile(): DiscordUserProfile {
   const saved = sessionStorage.getItem(storageKey);
   if (saved) {
     try {
-      return JSON.parse(saved) as DiscordUserProfile;
+      const parsed = JSON.parse(saved) as DiscordUserProfile;
+      parsed.avatarUrl = getSafeAvatarUrl(parsed.avatarUrl, 0);
+      return parsed;
     } catch {
       // ignore corrupted storage
     }
   }
 
-  const randomIdx = Math.floor(Math.random() * AVATAR_SEEDS.length);
+  const randomIdx = Math.floor(Math.random() * AVATAR_PRESETS.length);
   const suffix = Math.floor(100 + Math.random() * 900);
-  const seed = AVATAR_SEEDS[randomIdx % AVATAR_SEEDS.length] + suffix;
   const profile: DiscordUserProfile = {
     id: `local-${Date.now()}-${suffix}`,
     username: `player_${suffix}`,
     displayName: 'Player 1',
-    avatarUrl: `https://api.dicebear.com/9.x/adventurer/svg?seed=${encodeURIComponent(seed)}&backgroundColor=06b6d4,8b5cf6,ec4899,10b981`,
+    avatarUrl: AVATAR_PRESETS[randomIdx % AVATAR_PRESETS.length],
     isDiscordAuth: false,
     channelId: 'NEON-1',
     guildId: 'local-guild',
@@ -137,9 +128,14 @@ export async function initializeDiscordSdk(): Promise<{
     }
 
     const user = auth.user;
-    const avatarUrl = user.avatar
+    const rawDiscordAvatar = user.avatar
       ? `https://cdn.discordapp.com/avatars/${user.id}/${user.avatar}.png?size=256`
       : `https://cdn.discordapp.com/embed/avatars/${Number(BigInt(user.id) >> 22n) % 6}.png`;
+
+    const isDiscordProxy = window.location.hostname.includes('discordsays.com');
+    const avatarUrl = isDiscordProxy
+      ? `/.proxy/api/avatar?url=${encodeURIComponent(rawDiscordAvatar)}`
+      : rawDiscordAvatar;
 
     const profile: DiscordUserProfile = {
       id: user.id,

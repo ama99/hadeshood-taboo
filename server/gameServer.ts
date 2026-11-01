@@ -11,6 +11,7 @@ import {
   type TabooCard,
   type CardCategory,
 } from '../src/data/cards';
+import { AVATAR_PRESETS, getSafeAvatarUrl } from '../src/utils/avatars';
 import type {
   CardOutcome,
   ChatGuessEntry,
@@ -49,14 +50,7 @@ function formatPlayerNumberName(num: number, lang: 'fa' | 'en' = 'fa'): string {
   return `بازیکن شماره ${faNum}`;
 }
 
-const BOT_AVATARS = [
-  'https://api.dicebear.com/9.x/adventurer/svg?seed=Arash&backgroundColor=06b6d4',
-  'https://api.dicebear.com/9.x/adventurer/svg?seed=Sara&backgroundColor=ec4899',
-  'https://api.dicebear.com/9.x/adventurer/svg?seed=Kian&backgroundColor=8b5cf6',
-  'https://api.dicebear.com/9.x/adventurer/svg?seed=Niloufar&backgroundColor=f59e0b',
-  'https://api.dicebear.com/9.x/adventurer/svg?seed=Parsa&backgroundColor=10b981',
-  'https://api.dicebear.com/9.x/adventurer/svg?seed=Mahsa&backgroundColor=f43f5e',
-];
+const BOT_AVATARS = AVATAR_PRESETS;
 
 export function setupGameServer(httpServer: HttpServer, app: Express) {
   app.use(cors());
@@ -149,6 +143,33 @@ export function setupGameServer(httpServer: HttpServer, app: Express) {
   app.get('/api/cards', (req, res) => {
     const lang = req.query.lang === 'en' ? 'en' : 'fa';
     res.json({ cards: baseDecks[lang] });
+  });
+
+  // REST API: CSP-Safe Discord Avatar Proxy for Discord Activity Iframe
+  app.get('/api/avatar', async (req, res) => {
+    const rawUrl = typeof req.query.url === 'string' ? req.query.url : '';
+    if (
+      !rawUrl ||
+      (!rawUrl.startsWith('https://cdn.discordapp.com/') &&
+        !rawUrl.startsWith('https://media.discordapp.net/'))
+    ) {
+      res.redirect(AVATAR_PRESETS[0]);
+      return;
+    }
+    try {
+      const upstream = await fetch(rawUrl);
+      if (!upstream.ok) {
+        res.redirect(AVATAR_PRESETS[0]);
+        return;
+      }
+      const contentType = upstream.headers.get('content-type') || 'image/png';
+      const buf = Buffer.from(await upstream.arrayBuffer());
+      res.setHeader('Content-Type', contentType);
+      res.setHeader('Cache-Control', 'public, max-age=86400');
+      res.send(buf);
+    } catch {
+      res.redirect(AVATAR_PRESETS[0]);
+    }
   });
 
   // REST API: Discord Embedded App SDK OAuth2 Token Exchange
@@ -342,6 +363,7 @@ export function setupGameServer(httpServer: HttpServer, app: Express) {
       settings: room.settings,
       turn: room.turn,
       guesses: room.guesses.slice(-40),
+      customCards: room.customCards,
       customCardsCount: room.customCards.length,
       totalDeckSize: pool.length,
       remainingDeckSize: room.deck.length > 0 ? room.deck.length : pool.length,
@@ -559,7 +581,10 @@ export function setupGameServer(httpServer: HttpServer, app: Express) {
           existing.socketId = socket.id;
           existing.isConnected = true;
           existing.displayName = payload.profile.displayName || existing.displayName;
-          existing.avatarUrl = payload.profile.avatarUrl || existing.avatarUrl;
+          existing.avatarUrl = getSafeAvatarUrl(
+            payload.profile.avatarUrl || existing.avatarUrl,
+            room.players.indexOf(existing)
+          );
         } else {
           // Auto-balance team assignment
           const teamACount = room.players.filter((p) => p.team === 'A' && p.isConnected).length;
@@ -581,7 +606,7 @@ export function setupGameServer(httpServer: HttpServer, app: Express) {
             socketId: socket.id,
             username: payload.profile.username,
             displayName: assignedName,
-            avatarUrl: payload.profile.avatarUrl,
+            avatarUrl: getSafeAvatarUrl(payload.profile.avatarUrl, playerNum - 1),
             team: assignedTeam,
             isHost: !hasActiveHost,
             isBot: false,
@@ -715,15 +740,52 @@ export function setupGameServer(httpServer: HttpServer, app: Express) {
 
         if (!cleanWord || cleanForbidden.length === 0) return;
 
+        const cardLang = payload.lang || room.settings.deckLanguage;
+        const alreadyInBase = baseDecks[cardLang].some(
+          (c) => normalizeTextForMatch(c.word) === normalizeTextForMatch(cleanWord)
+        );
+        const alreadyInRoom = room.customCards.some(
+          (c) => normalizeTextForMatch(c.word) === normalizeTextForMatch(cleanWord)
+        );
+
         const newCard: TabooCard = {
           id: `custom-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
           word: cleanWord,
           forbiddenWords: cleanForbidden,
           category: 'custom',
-          lang: payload.lang || room.settings.deckLanguage,
+          lang: cardLang,
         };
-        room.customCards.unshift(newCard);
-        room.deck.push(newCard);
+
+        if (!alreadyInRoom) {
+          room.customCards.unshift(newCard);
+          room.deck.push(newCard);
+        }
+
+        if (!alreadyInBase) {
+          baseDecks[cardLang].unshift(newCard);
+          const sep = cardLang === 'fa' ? ' ، ' : ', ';
+          const lineToAppend = `\n${cleanWord} : ${cleanForbidden.join(sep)}`;
+          const targets =
+            cardLang === 'en'
+              ? [
+                  path.join(rootDir, 'public', 'cards_en.txt'),
+                  path.join(rootDir, 'src', 'data', 'cards_en.txt'),
+                ]
+              : [
+                  path.join(rootDir, 'public', 'cards.txt'),
+                  path.join(rootDir, 'src', 'data', 'cards.txt'),
+                ];
+          for (const fileTarget of targets) {
+            if (fs.existsSync(fileTarget)) {
+              try {
+                fs.appendFileSync(fileTarget, lineToAppend, 'utf8');
+              } catch {
+                // ignore read-only fs errors
+              }
+            }
+          }
+        }
+
         broadcastRoomState(room);
       }
     );

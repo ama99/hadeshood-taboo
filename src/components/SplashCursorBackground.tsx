@@ -111,16 +111,23 @@ export const LIGHT_SMOKY_PRESET_CONFIG: SplashCursorConfig = {
 
 interface SplashCursorBackgroundProps {
   theme?: ThemeMode;
+  enabled?: boolean;
 }
 
 export default function SplashCursorBackground({
   theme = 'dark',
+  enabled = true,
 }: SplashCursorBackgroundProps) {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const themeRef = useRef<ThemeMode>(theme);
   themeRef.current = theme;
 
   useEffect(() => {
+    if (!enabled) {
+      window.SplashCursorEngine?.destroy();
+      return;
+    }
+
     let cancelled = false;
     let initialized = false;
     let engine: SplashCursorEngineInstance | undefined;
@@ -146,16 +153,38 @@ export default function SplashCursorBackground({
         engine.destroy();
       }
     };
-  }, []);
+  }, [enabled]);
 
   useEffect(() => {
+    if (!enabled) return;
     const engine = window.SplashCursorEngine;
     if (!engine) return;
     engine.updateConfig(
       theme === 'light' ? LIGHT_SMOKY_PRESET_CONFIG : SMOKY_PRESET_CONFIG
     );
     engine.triggerSplats(4);
-  }, [theme]);
+  }, [theme, enabled]);
+
+  if (!enabled) {
+    return (
+      <div
+        style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          width: '100vw',
+          height: '100vh',
+          zIndex: 0,
+          pointerEvents: 'none',
+          background:
+            theme === 'light'
+              ? 'radial-gradient(circle at 20% 20%, rgba(0, 212, 255, 0.14), transparent 45%), radial-gradient(circle at 80% 80%, rgba(225, 29, 72, 0.12), transparent 45%), #f5f7fc'
+              : 'radial-gradient(circle at 20% 20%, rgba(0, 212, 255, 0.12), transparent 45%), radial-gradient(circle at 80% 80%, rgba(225, 29, 72, 0.12), transparent 45%), #05050c',
+        }}
+        aria-hidden="true"
+      />
+    );
+  }
 
   return (
     <canvas

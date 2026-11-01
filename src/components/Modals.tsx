@@ -13,18 +13,8 @@ import {
 import { translations, formatNumber } from '../i18n/translations';
 import type { CardCategory, TabooCard } from '../data/cards';
 import type { DiscordUserProfile, Language } from '../types/game';
+import { AVATAR_PRESETS, getSafeAvatarUrl } from '../utils/avatars';
 import { soundFX } from '../utils/sound';
-
-const AVATAR_PRESETS = [
-  'https://api.dicebear.com/9.x/adventurer/svg?seed=Felix&backgroundColor=06b6d4',
-  'https://api.dicebear.com/9.x/adventurer/svg?seed=Aneka&backgroundColor=ec4899',
-  'https://api.dicebear.com/9.x/adventurer/svg?seed=Jasper&backgroundColor=8b5cf6',
-  'https://api.dicebear.com/9.x/adventurer/svg?seed=Milo&backgroundColor=10b981',
-  'https://api.dicebear.com/9.x/adventurer/svg?seed=Luna&backgroundColor=f59e0b',
-  'https://api.dicebear.com/9.x/adventurer/svg?seed=Zoe&backgroundColor=f43f5e',
-  'https://api.dicebear.com/9.x/adventurer/svg?seed=Kian&backgroundColor=3b82f6',
-  'https://api.dicebear.com/9.x/adventurer/svg?seed=Daria&backgroundColor=a855f7',
-];
 
 export const RulesModal: React.FC<{
   isOpen: boolean;
@@ -322,7 +312,7 @@ export const EditProfileModal: React.FC<{
 }> = ({ isOpen, onClose, lang, profile, onSaveProfile }) => {
   const t = translations[lang];
   const [name, setName] = useState(profile.displayName);
-  const [avatar, setAvatar] = useState(profile.avatarUrl);
+  const [avatar, setAvatar] = useState(getSafeAvatarUrl(profile.avatarUrl, 0));
 
   if (!isOpen) return null;
 
@@ -353,8 +343,11 @@ export const EditProfileModal: React.FC<{
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="flex items-center justify-center mb-2">
             <img
-              src={avatar}
-              alt={name}
+              src={getSafeAvatarUrl(avatar, 0)}
+              alt=""
+              onError={(e) => {
+                e.currentTarget.src = AVATAR_PRESETS[0];
+              }}
               className="w-20 h-20 rounded-full border-2 border-cyan-400 bg-slate-800 shadow-lg"
             />
           </div>

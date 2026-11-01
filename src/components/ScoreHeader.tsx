@@ -2,6 +2,7 @@ import React from 'react';
 import { Timer, Pause, Play, Crown, Sparkles } from 'lucide-react';
 import { translations, formatNumber } from '../i18n/translations';
 import type { Language, RoomState } from '../types/game';
+import { AVATAR_PRESETS, getSafeAvatarUrl } from '../utils/avatars';
 import { soundFX } from '../utils/sound';
 
 interface ScoreHeaderProps {
@@ -51,12 +52,15 @@ export const ScoreHeader: React.FC<ScoreHeaderProps> = ({
             </div>
             {/* Team A Avatars */}
             <div className="flex items-center -space-x-1.5 rtl:space-x-reverse mt-1.5">
-              {teamAPlayers.slice(0, 5).map((p) => (
+              {teamAPlayers.slice(0, 5).map((p, idx) => (
                 <img
                   key={p.id}
-                  src={p.avatarUrl}
-                  alt={p.displayName}
+                  src={getSafeAvatarUrl(p.avatarUrl, idx)}
+                  alt=""
                   title={p.displayName}
+                  onError={(e) => {
+                    e.currentTarget.src = AVATAR_PRESETS[idx % AVATAR_PRESETS.length];
+                  }}
                   className={`w-6 h-6 rounded-full border-2 bg-slate-800 ${
                     p.id === turn.describerId
                       ? 'border-amber-400 ring-2 ring-amber-400/50 z-10 scale-110'
@@ -173,12 +177,15 @@ export const ScoreHeader: React.FC<ScoreHeaderProps> = ({
             </div>
             {/* Team B Avatars */}
             <div className="flex items-center -space-x-1.5 rtl:space-x-reverse mt-1.5">
-              {teamBPlayers.slice(0, 5).map((p) => (
+              {teamBPlayers.slice(0, 5).map((p, idx) => (
                 <img
                   key={p.id}
-                  src={p.avatarUrl}
-                  alt={p.displayName}
+                  src={getSafeAvatarUrl(p.avatarUrl, idx + 1)}
+                  alt=""
                   title={p.displayName}
+                  onError={(e) => {
+                    e.currentTarget.src = AVATAR_PRESETS[(idx + 1) % AVATAR_PRESETS.length];
+                  }}
                   className={`w-6 h-6 rounded-full border-2 bg-slate-800 ${
                     p.id === turn.describerId
                       ? 'border-amber-400 ring-2 ring-amber-400/50 z-10 scale-110'
