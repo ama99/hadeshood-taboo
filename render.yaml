@@ -7,6 +7,6 @@ services:
     startCommand: npm start
     envVars:
       - key: VITE_DISCORD_CLIENT_ID
-        value: 1565688902872735834
+        value: 1566438121787363389
       - key: DISCORD_CLIENT_SECRET
         sync: false

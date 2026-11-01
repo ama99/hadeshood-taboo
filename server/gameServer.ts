@@ -154,7 +154,10 @@ export function setupGameServer(httpServer: HttpServer, app: Express) {
   // REST API: Discord Embedded App SDK OAuth2 Token Exchange
   app.post('/api/token', async (req, res) => {
     const { code } = req.body || {};
-    const clientId = process.env.VITE_DISCORD_CLIENT_ID || process.env.DISCORD_CLIENT_ID;
+    const clientId =
+      process.env.VITE_DISCORD_CLIENT_ID ||
+      process.env.DISCORD_CLIENT_ID ||
+      '1566438121787363389';
     const clientSecret = process.env.DISCORD_CLIENT_SECRET;
 
     if (!code || !clientId || !clientSecret) {

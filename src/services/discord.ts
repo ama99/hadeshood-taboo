@@ -1,7 +1,7 @@
 import { DiscordSDK, DiscordSDKMock } from '@discord/embedded-app-sdk';
 import type { DiscordUserProfile } from '../types/game';
 
-const DISCORD_CLIENT_ID = import.meta.env.VITE_DISCORD_CLIENT_ID || '123456789012345678';
+const DISCORD_CLIENT_ID = import.meta.env.VITE_DISCORD_CLIENT_ID || '1566438121787363389';
 
 const AVATAR_SEEDS = [
   'Felix',
