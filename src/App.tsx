@@ -11,8 +11,8 @@ import type {
   FloatingReaction,
   GameSettings,
   Language,
+  PlayerTeam,
   RoomState,
-  TeamId,
   ThemeMode,
 } from './types/game';
 import { TopBar } from './components/TopBar';
@@ -375,6 +375,7 @@ export const App: React.FC = () => {
 
   // Determine actual role during PLAYING
   const myPlayer = roomState.players.find((p) => p.id === profile.id);
+  const isSpectator = myPlayer?.team === 'SPECTATOR';
   const actualRole: RolePerspective =
     profile.id === roomState.turn.describerId
       ? 'DESCRIBER'
@@ -382,8 +383,11 @@ export const App: React.FC = () => {
       ? 'GUESSER'
       : 'WATCHER';
 
-  const effectiveRole: RolePerspective =
-    perspectiveOverride === 'AUTO' ? actualRole : perspectiveOverride;
+  const effectiveRole: RolePerspective = isSpectator
+    ? perspectiveOverride === 'AUTO'
+      ? 'DESCRIBER'
+      : perspectiveOverride
+    : actualRole;
 
   const describerPlayer = roomState.players.find(
     (p) => p.id === roomState.turn.describerId
@@ -444,7 +448,7 @@ export const App: React.FC = () => {
             room={roomState}
             currentPlayerId={profile.id}
             lang={lang}
-            onSwitchTeam={(team: TeamId) => socket?.emit('switch_team', { team })}
+            onSwitchTeam={(team: PlayerTeam) => socket?.emit('switch_team', { team })}
             onShuffleTeams={() => socket?.emit('shuffle_teams')}
             onAddBot={() => socket?.emit('add_bot')}
             onRemoveBots={() => socket?.emit('remove_bots')}
@@ -479,10 +483,15 @@ export const App: React.FC = () => {
             {/* PLAYING Phase */}
             {roomState.phase === 'PLAYING' && (
               <div className="max-w-6xl mx-auto space-y-4">
-                {/* Role Banner & Dev Role Switcher */}
+                {/* Role Banner & Spectator View Switcher */}
                 <div className="flex flex-wrap items-center justify-between gap-2 bg-slate-900/80 border border-white/10 rounded-2xl px-4 py-2.5">
                   <div className="flex items-center gap-2 text-xs sm:text-sm font-extrabold">
-                    {effectiveRole === 'DESCRIBER' ? (
+                    {isSpectator ? (
+                      <span className="text-indigo-300 flex items-center gap-1.5">
+                        <Eye className="w-4 h-4 text-indigo-400" />
+                        {t.roleSpectatorBanner}
+                      </span>
+                    ) : effectiveRole === 'DESCRIBER' ? (
                       <span className="text-emerald-300 flex items-center gap-1.5">
                         <Mic className="w-4 h-4 text-emerald-400" />
                         {t.roleDescriberBanner}
@@ -500,33 +509,34 @@ export const App: React.FC = () => {
                     )}
                   </div>
 
-                  {/* Quick Perspective Switcher for Testing Any Role */}
-                  <div className="flex items-center gap-1 bg-slate-950/90 p-1 rounded-xl border border-white/10">
-                    <Eye className="w-3.5 h-3.5 text-slate-400 ms-1.5 hidden sm:inline" />
-                    {(
-                      [
-                        { key: 'AUTO', label: t.perspectiveActual },
-                        { key: 'DESCRIBER', label: t.perspectiveDescriber },
-                        { key: 'GUESSER', label: t.perspectiveGuesser },
-                        { key: 'WATCHER', label: t.perspectiveWatcher },
-                      ] as const
-                    ).map((opt) => (
-                      <button
-                        key={opt.key}
-                        onClick={() => {
-                          soundFX.playClick();
-                          setPerspectiveOverride(opt.key);
-                        }}
-                        className={`px-2 py-1 rounded-lg text-[10px] sm:text-[11px] font-bold transition cursor-pointer ${
-                          perspectiveOverride === opt.key
-                            ? 'bg-cyan-500 text-slate-950'
-                            : 'text-slate-400 hover:text-white'
-                        }`}
-                      >
-                        {opt.label}
-                      </button>
-                    ))}
-                  </div>
+                  {/* Perspective Switcher ONLY for Spectators */}
+                  {isSpectator && (
+                    <div className="flex items-center gap-1 bg-slate-950/90 p-1 rounded-xl border border-white/10">
+                      <Eye className="w-3.5 h-3.5 text-indigo-400 ms-1.5 hidden sm:inline" />
+                      {(
+                        [
+                          { key: 'DESCRIBER', label: t.perspectiveDescriber },
+                          { key: 'GUESSER', label: t.perspectiveGuesser },
+                          { key: 'WATCHER', label: t.perspectiveWatcher },
+                        ] as const
+                      ).map((opt) => (
+                        <button
+                          key={opt.key}
+                          onClick={() => {
+                            soundFX.playClick();
+                            setPerspectiveOverride(opt.key);
+                          }}
+                          className={`px-2.5 py-1 rounded-lg text-[10px] sm:text-[11px] font-bold transition cursor-pointer ${
+                            effectiveRole === opt.key
+                              ? 'bg-indigo-500 text-white'
+                              : 'text-slate-400 hover:text-white'
+                          }`}
+                        >
+                          {opt.label}
+                        </button>
+                      ))}
+                    </div>
+                  )}
                 </div>
 
                 {/* Animated Event Feedback Banner (Correct / Taboo / Skip) */}
@@ -568,6 +578,7 @@ export const App: React.FC = () => {
                     <TabooCardView
                       turn={roomState.turn}
                       roleView={effectiveRole}
+                      isSpectator={isSpectator}
                       lang={lang}
                       describerName={describerPlayer?.displayName || 'Describer'}
                       onCorrect={() => {
@@ -592,6 +603,7 @@ export const App: React.FC = () => {
                     <GuessFeedPanel
                       guesses={roomState.guesses}
                       roleView={effectiveRole}
+                      isSpectator={isSpectator}
                       lang={lang}
                       clueWarning={clueWarning}
                       onSubmitGuess={(text: string) =>

@@ -4,6 +4,7 @@ import {
   CheckCircle2,
   FastForward,
   AlertOctagon,
+  Eye,
   EyeOff,
   Sparkles,
   HelpCircle,
@@ -19,6 +20,7 @@ export type RolePerspective = 'DESCRIBER' | 'GUESSER' | 'WATCHER';
 interface TabooCardViewProps {
   turn: TurnState;
   roleView: RolePerspective;
+  isSpectator?: boolean;
   lang: Language;
   describerName: string;
   onCorrect: () => void;
@@ -30,6 +32,7 @@ interface TabooCardViewProps {
 export const TabooCardView: React.FC<TabooCardViewProps> = ({
   turn,
   roleView,
+  isSpectator = false,
   lang,
   describerName,
   onCorrect,
@@ -82,6 +85,11 @@ export const TabooCardView: React.FC<TabooCardViewProps> = ({
                       : t.firstLetterHint}{' '}
                     « {hint.hintText || hint.firstLetter} »
                   </span>
+                </div>
+              ) : isSpectator ? (
+                <div className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-indigo-500/15 border border-indigo-400/30 text-indigo-300 text-xs font-bold">
+                  <Eye className="w-3.5 h-3.5" />
+                  <span>{t.spectatorViewOnly}</span>
                 </div>
               ) : (
                 <button
@@ -179,7 +187,7 @@ export const TabooCardView: React.FC<TabooCardViewProps> = ({
         <div className="p-5 sm:p-6">
           <div className="grid grid-cols-2 gap-2.5 sm:gap-3">
             {card.forbiddenWords.map((fw, idx) =>
-              isWatcher ? (
+              isWatcher && !isSpectator ? (
                 <button
                   key={idx}
                   onClick={() => {
@@ -202,7 +210,7 @@ export const TabooCardView: React.FC<TabooCardViewProps> = ({
             )}
           </div>
 
-          {isWatcher && (
+          {isWatcher && !isSpectator && (
             <p className="text-[11px] text-center text-rose-300/80 mt-3.5 font-medium">
               {t.clickForbiddenToBuzz}
             </p>
@@ -211,7 +219,12 @@ export const TabooCardView: React.FC<TabooCardViewProps> = ({
       </div>
 
       {/* Action Controls Below Card */}
-      {roleView === 'DESCRIBER' ? (
+      {isSpectator ? (
+        <div className="mt-4 py-3 px-4 rounded-2xl bg-indigo-500/15 border border-indigo-400/30 text-indigo-200 text-xs sm:text-sm font-bold flex items-center justify-center gap-2">
+          <Eye className="w-4 h-4 text-indigo-400" />
+          <span>{t.spectatorViewOnly}</span>
+        </div>
+      ) : roleView === 'DESCRIBER' ? (
         <div className="mt-4 flex flex-col gap-2.5">
           <div className="grid grid-cols-5 gap-2.5">
             {/* Correct (+1) Button */}

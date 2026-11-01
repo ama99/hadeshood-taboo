@@ -1,8 +1,9 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Send, MessageSquare, Sparkles, CheckCircle2, AlertOctagon, FastForward } from 'lucide-react';
+import { Send, MessageSquare, Sparkles, CheckCircle2, AlertOctagon, FastForward, Eye } from 'lucide-react';
 import { translations } from '../i18n/translations';
 import type { ChatGuessEntry, Language } from '../types/game';
 import type { RolePerspective } from './TabooCardView';
+import { AVATAR_PRESETS, getSafeAvatarUrl } from '../utils/avatars';
 import { soundFX } from '../utils/sound';
 
 const QUICK_EMOJIS = ['😂', '🔥', '🤯', '👏', '⏰', '🤫'];
@@ -10,6 +11,7 @@ const QUICK_EMOJIS = ['😂', '🔥', '🤯', '👏', '⏰', '🤫'];
 interface GuessFeedPanelProps {
   guesses: ChatGuessEntry[];
   roleView: RolePerspective;
+  isSpectator?: boolean;
   lang: Language;
   clueWarning: string | null;
   onSubmitGuess: (text: string) => void;
@@ -19,6 +21,7 @@ interface GuessFeedPanelProps {
 export const GuessFeedPanel: React.FC<GuessFeedPanelProps> = ({
   guesses,
   roleView,
+  isSpectator = false,
   lang,
   clueWarning,
   onSubmitGuess,
@@ -113,8 +116,11 @@ export const GuessFeedPanel: React.FC<GuessFeedPanelProps> = ({
                 <div className="flex items-center gap-2 min-w-0">
                   {g.playerAvatar && (
                     <img
-                      src={g.playerAvatar}
-                      alt={g.playerName}
+                      src={getSafeAvatarUrl(g.playerAvatar, 0)}
+                      alt=""
+                      onError={(e) => {
+                        e.currentTarget.src = AVATAR_PRESETS[0];
+                      }}
                       className="w-6 h-6 rounded-full bg-slate-800 shrink-0"
                     />
                   )}
@@ -141,27 +147,34 @@ export const GuessFeedPanel: React.FC<GuessFeedPanelProps> = ({
         </div>
       )}
 
-      {/* Input Form */}
-      <form onSubmit={handleSubmit} className="mt-3 flex items-center gap-2">
-        <input
-          type="text"
-          value={text}
-          onChange={(e) => setText(e.target.value)}
-          placeholder={
-            roleView === 'DESCRIBER'
-              ? t.describerChatPlaceholder
-              : t.guessInputPlaceholder
-          }
-          className="flex-1 bg-slate-950 border border-white/15 rounded-xl px-3.5 py-2.5 text-xs sm:text-sm text-white focus:outline-none focus:border-cyan-400"
-        />
-        <button
-          type="submit"
-          className="px-4 py-2.5 rounded-xl bg-cyan-500 hover:bg-cyan-400 text-slate-950 font-black text-xs sm:text-sm flex items-center gap-1.5 transition cursor-pointer shrink-0"
-        >
-          <Send className="w-4 h-4 rtl:-scale-x-100" />
-          <span className="hidden sm:inline">{t.sendBtn}</span>
-        </button>
-      </form>
+      {/* Input Form or Spectator View-Only Notice */}
+      {isSpectator ? (
+        <div className="mt-3 py-2.5 px-3.5 rounded-xl bg-indigo-500/15 border border-indigo-400/30 text-indigo-200 text-xs font-bold flex items-center justify-center gap-2">
+          <Eye className="w-3.5 h-3.5 text-indigo-400" />
+          <span>{t.spectatorViewOnly}</span>
+        </div>
+      ) : (
+        <form onSubmit={handleSubmit} className="mt-3 flex items-center gap-2">
+          <input
+            type="text"
+            value={text}
+            onChange={(e) => setText(e.target.value)}
+            placeholder={
+              roleView === 'DESCRIBER'
+                ? t.describerChatPlaceholder
+                : t.guessInputPlaceholder
+            }
+            className="flex-1 bg-slate-950 border border-white/15 rounded-xl px-3.5 py-2.5 text-xs sm:text-sm text-white focus:outline-none focus:border-cyan-400"
+          />
+          <button
+            type="submit"
+            className="px-4 py-2.5 rounded-xl bg-cyan-500 hover:bg-cyan-400 text-slate-950 font-black text-xs sm:text-sm flex items-center gap-1.5 transition cursor-pointer shrink-0"
+          >
+            <Send className="w-4 h-4 rtl:-scale-x-100" />
+            <span className="hidden sm:inline">{t.sendBtn}</span>
+          </button>
+        </form>
+      )}
     </div>
   );
 };

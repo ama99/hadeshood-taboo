@@ -20,6 +20,7 @@ import type {
   GameSettings,
   PlayedCardRecord,
   Player,
+  PlayerTeam,
   RoomState,
   TeamId,
   TurnState,
@@ -626,13 +627,16 @@ export function setupGameServer(httpServer: HttpServer, app: Express) {
       }
     );
 
-    socket.on('switch_team', (payload: { team: TeamId }) => {
+    socket.on('switch_team', (payload: { team: PlayerTeam }) => {
       const info = socketToRoom.get(socket.id);
       if (!info) return;
       const room = rooms.get(info.roomId);
       if (!room) return;
       const player = room.players.find((p) => p.id === info.playerId);
-      if (player && (payload.team === 'A' || payload.team === 'B')) {
+      if (
+        player &&
+        (payload.team === 'A' || payload.team === 'B' || payload.team === 'SPECTATOR')
+      ) {
         player.team = payload.team;
         broadcastRoomState(room);
       }
@@ -643,7 +647,9 @@ export function setupGameServer(httpServer: HttpServer, app: Express) {
       if (!info) return;
       const room = rooms.get(info.roomId);
       if (!room || room.phase !== 'LOBBY') return;
-      const activePlayers = shuffleArray(room.players.filter((p) => p.isConnected));
+      const activePlayers = shuffleArray(
+        room.players.filter((p) => p.isConnected && p.team !== 'SPECTATOR')
+      );
       activePlayers.forEach((p, idx) => {
         p.team = idx % 2 === 0 ? 'A' : 'B';
       });
@@ -796,7 +802,9 @@ export function setupGameServer(httpServer: HttpServer, app: Express) {
       const room = rooms.get(info.roomId);
       if (!room) return;
 
-      const connectedPlayers = room.players.filter((p) => p.isConnected);
+      const connectedPlayers = room.players.filter(
+        (p) => p.isConnected && p.team !== 'SPECTATOR'
+      );
       if (connectedPlayers.length < 4) return;
 
       // Ensure both teams have at least 2 players
@@ -848,6 +856,8 @@ export function setupGameServer(httpServer: HttpServer, app: Express) {
       if (!info) return;
       const room = rooms.get(info.roomId);
       if (!room || room.phase !== 'PLAYING' || !room.turn.currentCardHint) return;
+      const player = room.players.find((p) => p.id === info.playerId);
+      if (!player || player.team === 'SPECTATOR') return;
       if (room.turn.currentCardHint.hintRevealed || room.turn.hintsRemaining <= 0) return;
       room.turn.hintsRemaining -= 1;
       room.turn.currentCardHint.hintRevealed = true;
@@ -859,6 +869,8 @@ export function setupGameServer(httpServer: HttpServer, app: Express) {
       if (!info) return;
       const room = rooms.get(info.roomId);
       if (!room || room.phase !== 'PLAYING') return;
+      const player = room.players.find((p) => p.id === info.playerId);
+      if (!player || player.team === 'SPECTATOR') return;
       handleCardResolved(room, 'CORRECT');
     });
 
@@ -867,6 +879,8 @@ export function setupGameServer(httpServer: HttpServer, app: Express) {
       if (!info) return;
       const room = rooms.get(info.roomId);
       if (!room || room.phase !== 'PLAYING') return;
+      const player = room.players.find((p) => p.id === info.playerId);
+      if (!player || player.team === 'SPECTATOR') return;
       if (room.turn.skipsRemaining <= 0) return;
 
       room.turn.skipsRemaining -= 1;
@@ -879,18 +893,20 @@ export function setupGameServer(httpServer: HttpServer, app: Express) {
       const room = rooms.get(info.roomId);
       if (!room || room.phase !== 'PLAYING') return;
 
+      const buzzerPlayer = room.players.find((p) => p.id === info.playerId);
+      if (!buzzerPlayer || buzzerPlayer.team === 'SPECTATOR') return;
+
       // Cooldown protection right after a new card appears
       if (Date.now() < room.turn.buzzerCooldownUntil) return;
 
-      const buzzerPlayer = room.players.find((p) => p.id === info.playerId);
-      if (buzzerPlayer && buzzerPlayer.id !== room.turn.describerId) {
+      if (buzzerPlayer.id !== room.turn.describerId) {
         buzzerPlayer.stats.taboosCaught += 1;
       }
 
       handleCardResolved(
         room,
         'TABOO',
-        buzzerPlayer?.displayName || 'ناظر',
+        buzzerPlayer.displayName || 'ناظر',
         payload?.violatedWord
       );
     });
@@ -902,7 +918,7 @@ export function setupGameServer(httpServer: HttpServer, app: Express) {
       if (!room || !payload?.text?.trim()) return;
 
       const player = room.players.find((p) => p.id === info.playerId);
-      if (!player) return;
+      if (!player || player.team === 'SPECTATOR') return;
 
       const text = payload.text.trim().slice(0, 120);
       const currentCard = room.turn.currentCard;

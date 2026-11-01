@@ -19,10 +19,11 @@ import {
   Check,
   Minus,
   Plus,
+  Eye,
 } from 'lucide-react';
 import { translations, formatNumber } from '../i18n/translations';
 import type { CardCategory } from '../data/cards';
-import type { GameSettings, Language, RoomState, TeamId } from '../types/game';
+import type { GameSettings, Language, PlayerTeam, RoomState } from '../types/game';
 import { AVATAR_PRESETS, getSafeAvatarUrl } from '../utils/avatars';
 import { soundFX } from '../utils/sound';
 
@@ -30,7 +31,7 @@ interface LobbyViewProps {
   room: RoomState;
   currentPlayerId: string;
   lang: Language;
-  onSwitchTeam: (team: TeamId) => void;
+  onSwitchTeam: (team: PlayerTeam) => void;
   onShuffleTeams: () => void;
   onAddBot: () => void;
   onRemoveBots: () => void;
@@ -55,8 +56,10 @@ export const LobbyView: React.FC<LobbyViewProps> = ({
   const connectedPlayers = room.players.filter((p) => p.isConnected);
   const teamA = connectedPlayers.filter((p) => p.team === 'A');
   const teamB = connectedPlayers.filter((p) => p.team === 'B');
+  const spectators = connectedPlayers.filter((p) => p.team === 'SPECTATOR');
   const hasBots = connectedPlayers.some((p) => p.isBot);
-  const canStart = connectedPlayers.length >= 4;
+  const canStart =
+    teamA.length + teamB.length >= 4 && teamA.length >= 1 && teamB.length >= 1;
   const { settings } = room;
 
   const categories: CardCategory[] = [
@@ -296,6 +299,73 @@ export const LobbyView: React.FC<LobbyViewProps> = ({
             >
               {t.joinTeamB}
             </button>
+          </div>
+
+          {/* Spectators Card spanning both team columns */}
+          <div className="sm:col-span-2 bg-slate-900/75 backdrop-blur-xl border border-indigo-400/30 rounded-3xl p-4 sm:p-5 flex flex-col gap-3.5 shadow-xl shadow-indigo-500/5">
+            <div className="flex flex-wrap items-center justify-between gap-2 pb-2.5 border-b border-white/10">
+              <div className="flex items-center gap-2">
+                <Eye className="w-4 h-4 text-indigo-400" />
+                <h2 className="text-sm sm:text-base font-black text-indigo-200">
+                  {t.spectatorsDefault}
+                </h2>
+                <span className="px-2 py-0.5 rounded-full text-[11px] font-bold bg-indigo-500/15 text-indigo-300">
+                  {formatNumber(spectators.length, lang)} {t.playersCount}
+                </span>
+              </div>
+
+              <button
+                onClick={() => {
+                  soundFX.playClick();
+                  onSwitchTeam('SPECTATOR');
+                }}
+                className="px-3.5 py-1.5 rounded-xl bg-indigo-500/20 hover:bg-indigo-500/30 border border-indigo-400/40 text-indigo-200 font-extrabold text-xs transition cursor-pointer flex items-center gap-1.5"
+              >
+                <Eye className="w-3.5 h-3.5 text-indigo-300" />
+                <span>{t.joinSpectators}</span>
+              </button>
+            </div>
+
+            {spectators.length === 0 ? (
+              <div className="py-3 text-center text-slate-500 text-xs border border-dashed border-white/10 rounded-2xl">
+                {t.noSpectatorsYet}
+              </div>
+            ) : (
+              <div className="flex flex-wrap gap-2">
+                {spectators.map((p) => (
+                  <div
+                    key={p.id}
+                    className={`flex items-center gap-2 px-3 py-1.5 rounded-2xl border ${
+                      p.id === currentPlayerId
+                        ? 'bg-indigo-500/20 border-indigo-400/50'
+                        : 'bg-slate-950/70 border-white/5'
+                    }`}
+                  >
+                    <img
+                      src={getSafeAvatarUrl(p.avatarUrl, 2)}
+                      alt=""
+                      onError={(e) => {
+                        e.currentTarget.src = AVATAR_PRESETS[2];
+                      }}
+                      className="w-7 h-7 rounded-full bg-slate-800 border border-indigo-400/40 shrink-0"
+                    />
+                    <span className="text-xs font-bold text-white truncate max-w-[140px]">
+                      {p.displayName}
+                    </span>
+                    {p.isHost && (
+                      <span title={t.hostBadge} className="inline-flex">
+                        <Crown className="w-3 h-3 text-amber-400 shrink-0" />
+                      </span>
+                    )}
+                    {p.id === currentPlayerId && (
+                      <span className="text-[10px] px-1.5 py-0.2 rounded bg-indigo-500/25 text-indigo-200 font-bold">
+                        {t.youBadge}
+                      </span>
+                    )}
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
 
           {/* Start Game CTA Banner spanning both team columns */}

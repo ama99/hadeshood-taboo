@@ -30,6 +30,7 @@ export const PreTurnScreen: React.FC<{
   const currentPlayer = players.find((p) => p.id === currentPlayerId);
 
   const isDescriber = currentPlayerId === turn.describerId;
+  const isSpectator = currentPlayer?.team === 'SPECTATOR';
   const isTeammate = currentPlayer?.team === turn.activeTeam && !isDescriber;
 
   const isCyan = turn.activeTeam === 'A';
@@ -86,14 +87,21 @@ export const PreTurnScreen: React.FC<{
         {/* Role Instruction Banner */}
         <div
           className={`p-4 rounded-2xl border mb-6 text-xs sm:text-sm font-bold leading-relaxed flex items-center justify-center gap-2.5 ${
-            isDescriber
+            isSpectator
+              ? 'bg-indigo-500/15 border-indigo-400/40 text-indigo-200'
+              : isDescriber
               ? 'bg-emerald-500/15 border-emerald-400/40 text-emerald-200'
               : isTeammate
               ? 'bg-cyan-500/15 border-cyan-400/40 text-cyan-200'
               : 'bg-rose-500/15 border-rose-400/40 text-rose-200'
           }`}
         >
-          {isDescriber ? (
+          {isSpectator ? (
+            <>
+              <Eye className="w-5 h-5 shrink-0 text-indigo-400" />
+              <span>{t.roleSpectatorBanner}</span>
+            </>
+          ) : isDescriber ? (
             <>
               <Mic className="w-5 h-5 shrink-0 text-emerald-400" />
               <span>{t.yourTurnToDescribe}</span>
@@ -112,16 +120,18 @@ export const PreTurnScreen: React.FC<{
         </div>
 
         {/* Start Turn Button */}
-        <button
-          onClick={() => {
-            soundFX.playClick();
-            onStartTurn();
-          }}
-          className="w-full py-4 px-6 rounded-2xl bg-gradient-to-r from-cyan-400 via-indigo-500 to-rose-500 hover:from-cyan-300 hover:to-rose-400 text-white font-black text-base sm:text-lg shadow-xl shadow-indigo-500/25 flex items-center justify-center gap-2.5 transition transform active:scale-95 cursor-pointer"
-        >
-          <Play className="w-5 h-5 fill-current" />
-          <span>{isDescriber ? t.startTurnBtn : t.forceStartTurn}</span>
-        </button>
+        {!isSpectator && (
+          <button
+            onClick={() => {
+              soundFX.playClick();
+              onStartTurn();
+            }}
+            className="w-full py-4 px-6 rounded-2xl bg-gradient-to-r from-cyan-400 via-indigo-500 to-rose-500 hover:from-cyan-300 hover:to-rose-400 text-white font-black text-base sm:text-lg shadow-xl shadow-indigo-500/25 flex items-center justify-center gap-2.5 transition transform active:scale-95 cursor-pointer"
+          >
+            <Play className="w-5 h-5 fill-current" />
+            <span>{isDescriber ? t.startTurnBtn : t.forceStartTurn}</span>
+          </button>
+        )}
       </div>
     </div>
   );

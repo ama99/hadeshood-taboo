@@ -1,6 +1,7 @@
 import type { CardCategory, TabooCard } from '../data/cards';
 
 export type TeamId = 'A' | 'B';
+export type PlayerTeam = TeamId | 'SPECTATOR';
 export type Language = 'fa' | 'en';
 export type ThemeMode = 'dark' | 'light';
 export type GamePhase = 'LOBBY' | 'PRE_TURN' | 'PLAYING' | 'TURN_SUMMARY' | 'GAME_OVER';
@@ -22,7 +23,7 @@ export interface Player {
   username: string;
   displayName: string;
   avatarUrl: string;
-  team: TeamId;
+  team: PlayerTeam;
   isHost: boolean;
   isBot: boolean;
   isConnected: boolean;
@@ -85,7 +86,7 @@ export interface ChatGuessEntry {
   playerId: string;
   playerName: string;
   playerAvatar: string;
-  team: TeamId;
+  team: PlayerTeam;
   text: string;
   isCorrect: boolean;
   isSystem?: boolean;
