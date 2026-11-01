@@ -32,6 +32,13 @@
   background-color: transparent;
 }
 
+/* Optimize backdrop-blur over 60fps WebGL canvas inside Discord Electron iframe */
+.backdrop-blur-xl,
+.backdrop-blur-2xl {
+  -webkit-backdrop-filter: blur(6px) !important;
+  backdrop-filter: blur(6px) !important;
+}
+
 /* Heartbeat pulse animation for urgent timer (single 0.78s cycle triggered per second tick) */
 @keyframes heartbeatPulse {
   0% {

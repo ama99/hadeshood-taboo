@@ -190,11 +190,12 @@ window.SplashCursorEngine = (function () {
 
   function getWebGLContext(canvas) {
     const params = {
-      alpha: true,
+      alpha: false,
       depth: false,
       stencil: false,
       antialias: false,
       preserveDrawingBuffer: false,
+      powerPreference: 'high-performance',
     };
 
     let gl2 = canvas.getContext('webgl2', params);
@@ -1241,7 +1242,7 @@ window.SplashCursorEngine = (function () {
   }
 
   function getPixelRatio() {
-    return Math.min(window.devicePixelRatio || 1, 2);
+    return 1;
   }
 
   function scaleByPixelRatio(input) {
@@ -1251,23 +1252,26 @@ window.SplashCursorEngine = (function () {
   // ========== Splat ==========
 
   const flowColorScratch = { r: 0, g: 0, b: 0 };
+  let flowFrameSkip = 0;
   
   function applyBackgroundFlow(now) {
+    flowFrameSkip = (flowFrameSkip + 1) & 1;
+    if (flowFrameSkip !== 0) return;
+
     const time = now / 1000.0 * config.FLOW_BACKGROUND_SPEED;
     
     // 1. Inject global vector field velocity
     flowFieldProgram.bind();
     gl.uniform1i(flowFieldProgram.uniforms.uTarget, velocity.read.attach(0));
     gl.uniform1f(flowFieldProgram.uniforms.uTime, time);
-    gl.uniform1f(flowFieldProgram.uniforms.uForce, config.FLOW_BACKGROUND_FORCE);
+    gl.uniform1f(flowFieldProgram.uniforms.uForce, config.FLOW_BACKGROUND_FORCE * 1.6);
     blit(velocity.write);
     velocity.swap();
 
     // 2. Inject dye using phantom pointers (so it moves freely via the vector field)
     programs_splat.bind();
-    const numPointers = 3;
-    // Faintness multiplier. If faintness is 8.0, multiplier is 0.4.
-    const faintnessMult = config.FLOW_BACKGROUND_FAINTNESS * 0.05; 
+    const numPointers = 2;
+    const faintnessMult = config.FLOW_BACKGROUND_FAINTNESS * 0.085; 
     
     // Shared uniform bindings
     gl.uniform1i(programs_splat.uniforms.uTarget, dye.read.attach(0));
